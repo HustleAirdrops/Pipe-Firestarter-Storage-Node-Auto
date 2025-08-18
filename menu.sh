@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Counter for Ctrl+C presses
+# Counter for Ctrl+C presses AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 CTRL_C_COUNT=0
 
 # Trap Ctrl+C to allow graceful exit after one press
