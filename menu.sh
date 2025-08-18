@@ -16,12 +16,27 @@ return_to_menu() {
     sleep 1
 }
 
+# Function to set up virtual environment
+setup_venv() {
+    VENV_DIR="$HOME/pipe_venv"
+    if [ ! -d "$VENV_DIR" ]; then
+        echo -e "${BLUE}Creating Python virtual environment at $VENV_DIR...${NC}"
+        python3 -m venv "$VENV_DIR"
+        source "$VENV_DIR/bin/activate"
+        pip install --upgrade pip
+        pip install yt-dlp
+        deactivate
+    else
+        echo -e "${BLUE}Virtual environment already exists at $VENV_DIR.${NC}"
+    fi
+}
+
 # Function to install dependencies and Pipe node
 install_node() {
     echo -e "${BLUE}Updating system and installing dependencies...${NC}"
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-pip
-    pip3 install yt-dlp
+    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv python3-pip
+    setup_venv
 
     echo -e "${BLUE}Installing Rust...${NC}"
     curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -91,7 +106,9 @@ upload_file() {
     echo -e "${YELLOW}Enter a search query for the video (e.g., 'random full hd'):${NC}"
     read query
     echo -e "${BLUE}Downloading video...${NC}"
+    source "$HOME/pipe_venv/bin/activate"
     python3 video_downloader.py "$query"
+    deactivate
 
     if [ -f "combined_video.mp4" ]; then
         echo -e "${BLUE}Uploading video...${NC}"
