@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Counter for Ctrl+C presses AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# Counter for Ctrl+C presses
 CTRL_C_COUNT=0
 
 # Trap Ctrl+C to allow graceful exit after one press
@@ -32,48 +32,37 @@ return_to_menu() {
     sleep 1
 }
 
-# Function to set up Python environment
-setup_python_env() {
-    echo -e "${BLUE}Installing pipx and setting up Python environment...${NC}"
-    sudo apt install -y pipx
-    pipx ensurepath
-    source ~/.bashrc
-    pipx install yt-dlp
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}yt-dlp installed successfully via pipx!${NC}"
-    else
-        echo -e "${YELLOW}pipx failed. Trying fallback with venv...${NC}"
-        VENV_DIR="$HOME/pipe_venv"
-        if [ ! -d "$VENV_DIR" ]; then
-            echo -e "${BLUE}Creating Python virtual environment at $VENV_DIR...${NC}"
-            python3 -m venv "$VENV_DIR"
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}Failed to create virtual environment!${NC}"
-                return 1
-            fi
-            source "$VENV_DIR/bin/activate"
-            pip install --upgrade pip
-            pip install yt-dlp
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}Failed to install yt-dlp in venv!${NC}"
-                deactivate
-                return 1
-            fi
-            deactivate
-        else
-            echo -e "${BLUE}Virtual environment already exists at $VENV_DIR.${NC}"
+# Function to set up virtual environment
+setup_venv() {
+    VENV_DIR="$HOME/pipe_venv"
+    echo -e "${BLUE}Setting up Python virtual environment at $VENV_DIR...${NC}"
+    if [ ! -d "$VENV_DIR" ]; then
+        python3 -m venv "$VENV_DIR"
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Failed to create virtual environment!${NC}"
+            return 1
         fi
     fi
+    source "$VENV_DIR/bin/activate"
+    pip install --upgrade pip
+    pip install yt-dlp
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to install yt-dlp in venv!${NC}"
+        deactivate
+        return 1
+    fi
+    echo -e "${GREEN}yt-dlp installed successfully in venv!${NC}"
+    deactivate
 }
 
 # Function to install dependencies and Pipe node
 install_node() {
     echo -e "${BLUE}Updating system and installing dependencies...${NC}"
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv python3-pip pipx
-    setup_python_env
+    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv
+    setup_venv
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Python environment setup failed. Continuing without yt-dlp...${NC}"
+        echo -e "${RED}Python environment setup failed. You can still use other menu options, but file upload may not work.${NC}"
     fi
 
     echo -e "${BLUE}Installing Rust...${NC}"
@@ -115,7 +104,7 @@ install_node() {
     echo -e "${YELLOW}Enter a referral code (or press Enter to use default):${NC}"
     read referral_code
     if [ -z "$referral_code" ]; then
-        referral_code="ITZMEAAS-PFJU"
+        referral_code="MAYANKGG-D4CJ"
         echo -e "${YELLOW}Using default referral code: $referral_code${NC}"
     fi
     echo -e "${BLUE}Applying referral code...${NC}"
@@ -141,30 +130,26 @@ install_node() {
 
 # Function to download and upload video
 upload_file() {
+    VENV_DIR="$HOME/pipe_venv"
+    if [ ! -d "$VENV_DIR" ]; then
+        echo -e "${RED}Virtual environment not found. Please run option 1 to set up the environment.${NC}"
+        return_to_menu
+        return
+    fi
+
     echo -e "${YELLOW}Enter a search query for the video (e.g., 'random full hd'):${NC}"
     read query
     echo -e "${BLUE}Downloading video...${NC}"
-    if command -v yt-dlp >/dev/null 2>&1; then
+    source "$VENV_DIR/bin/activate"
+    if pip show yt-dlp >/dev/null 2>&1; then
         python3 video_downloader.py "$query"
     else
-        VENV_DIR="$HOME/pipe_venv"
-        if [ -d "$VENV_DIR" ]; then
-            source "$VENV_DIR/bin/activate"
-            if pip show yt-dlp >/dev/null 2>&1; then
-                python3 video_downloader.py "$query"
-            else
-                echo -e "${RED}yt-dlp not found in venv. Please run option 1 to set up the environment.${NC}"
-                deactivate
-                return_to_menu
-                return
-            fi
-            deactivate
-        else
-            echo -e "${RED}Virtual environment not found. Please run option 1 to set up the environment.${NC}"
-            return_to_menu
-            return
-        fi
+        echo -e "${RED}yt-dlp not found in venv. Please run option 1 to set up the environment.${NC}"
+        deactivate
+        return_to_menu
+        return
     fi
+    deactivate
 
     if [ -f "combined_video.mp4" ]; then
         echo -e "${BLUE}Uploading video...${NC}"
