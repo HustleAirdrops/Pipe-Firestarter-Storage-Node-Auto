@@ -7,6 +7,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Trap Ctrl+C to prevent terminal exit and return to menu
+trap 'echo -e "${RED}\nCtrl+C detected. Returning to menu...${NC}"; return_to_menu' SIGINT
+
+# Function to return to menu
+return_to_menu() {
+    echo -e "${BLUE}Returning to main menu...${NC}"
+    sleep 1
+}
+
 # Function to install dependencies and Pipe node
 install_node() {
     echo -e "${BLUE}Updating system and installing dependencies...${NC}"
@@ -30,7 +39,8 @@ install_node() {
         echo -e "${GREEN}Pipe installed successfully!${NC}"
     else
         echo -e "${RED}Pipe installation failed!${NC}"
-        exit 1
+        return_to_menu
+        return
     fi
 
     echo -e "${YELLOW}Enter your desired username:${NC}"
@@ -70,8 +80,9 @@ install_node() {
         echo -e "${BLUE}Swapping 2 SOL for PIPE...${NC}"
         pipe swap-sol-for-pipe 2
     else
-        echo -e "${RED}SOL not claimed. Exiting.${NC}"
-        exit 1
+        echo -e "${RED}SOL not claimed. Returning to menu.${NC}"
+        return_to_menu
+        return
     fi
 }
 
@@ -109,6 +120,7 @@ EOF
     else
         echo -e "${RED}No video file found.${NC}"
     fi
+    return_to_menu
 }
 
 # Function to show uploaded file info
@@ -119,6 +131,7 @@ show_file_info() {
     else
         echo -e "${RED}No file details found.${NC}"
     fi
+    return_to_menu
 }
 
 # Function to show referral stats and code
@@ -127,12 +140,14 @@ show_referral() {
     pipe referral show
     echo -e "${BLUE}Your referral code:${NC}"
     pipe referral generate
+    return_to_menu
 }
 
 # Function to check token usage
 check_token_usage() {
     echo -e "${BLUE}Checking token usage...${NC}"
     pipe token-usage
+    return_to_menu
 }
 
 # Python script for video downloading
@@ -208,6 +223,7 @@ EOF
 
 # Menu
 while true; do
+    clear
     echo -e "${BLUE}=== Pipe Network Menu ===${NC}"
     echo -e "${YELLOW}1. Install Node${NC}"
     echo -e "${YELLOW}2. Upload File${NC}"
@@ -224,6 +240,6 @@ while true; do
         4) show_referral ;;
         5) check_token_usage ;;
         6) echo -e "${GREEN}Exiting...${NC}"; exit 0 ;;
-        *) echo -e "${RED}Invalid option. Try again.${NC}" ;;
+        *) echo -e "${RED}Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
 done
