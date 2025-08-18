@@ -1,18 +1,14 @@
 #!/bin/bash
-
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-
-# Counter for Ctrl+C presses AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# Counter for Ctrl+C presses
 CTRL_C_COUNT=0
-
 # Trap Ctrl+C to allow graceful exit after one press
 trap 'handle_ctrl_c' SIGINT
-
 # Function to handle Ctrl+C
 handle_ctrl_c() {
     ((CTRL_C_COUNT++))
@@ -24,14 +20,12 @@ handle_ctrl_c() {
     sleep 1
     return_to_menu
 }
-
 # Function to return to menu
 return_to_menu() {
     CTRL_C_COUNT=0 # Reset Ctrl+C counter
     echo -e "${BLUE}Returning to main menu...${NC}"
     sleep 1
 }
-
 # Function to set up virtual environment
 setup_venv() {
     VENV_DIR="$HOME/pipe_venv"
@@ -54,7 +48,6 @@ setup_venv() {
     echo -e "${GREEN}yt-dlp installed successfully in venv!${NC}"
     deactivate
 }
-
 # Function to install dependencies and Pipe node
 install_node() {
     echo -e "${BLUE}Updating system and installing dependencies...${NC}"
@@ -64,17 +57,14 @@ install_node() {
     if [ $? -ne 0 ]; then
         echo -e "${RED}Python environment setup failed. You can still use other menu options, but file upload may not work.${NC}"
     fi
-
     echo -e "${BLUE}Installing Rust...${NC}"
     curl https://sh.rustup.rs -sSf | sh -s -- -y
     source $HOME/.cargo/env
-
     echo -e "${BLUE}Cloning and installing Pipe...${NC}"
     git clone https://github.com/PipeNetwork/pipe.git
     cd pipe
     cargo install --path .
     cd ..
-
     echo -e "${BLUE}Verifying Pipe installation...${NC}"
     pipe -h
     if [ $? -eq 0 ]; then
@@ -84,37 +74,31 @@ install_node() {
         return_to_menu
         return
     fi
-
     echo -e "${YELLOW}Enter your desired username:${NC}"
     read username
     echo -e "${BLUE}Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
     echo -e "${GREEN}User created. Save these details:${NC}"
     echo "$pipe_output"
-
     # Extract Solana public key
     solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
     echo -e "${GREEN}Your Solana Public Key: $solana_pubkey${NC}"
-
     # Save credentials
     echo -e "${BLUE}Saving credentials to /home/$USER/.pipe-cli.json...${NC}"
     nano /home/$USER/.pipe-cli.json
-
     # Handle referral code
     echo -e "${YELLOW}Enter a referral code (or press Enter to use default):${NC}"
     read referral_code
     if [ -z "$referral_code" ]; then
-        referral_code="MAYANKGG-D4CJ"
+        referral_code="ITZMEAAS-PFJU"
         echo -e "${YELLOW}Using default referral code: $referral_code${NC}"
     fi
     echo -e "${BLUE}Applying referral code...${NC}"
     pipe referral apply "$referral_code"
-
     echo -e "${BLUE}Generating your referral code...${NC}"
     pipe referral generate
     echo -e "${BLUE}Your referral stats:${NC}"
     pipe referral show
-
     echo -e "${YELLOW}Claim 5 Devnet SOL from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
     echo -e "${YELLOW}Enter 'yes' to confirm you have claimed the SOL:${NC}"
     read confirmation
@@ -127,8 +111,6 @@ install_node() {
         return
     fi
 }
-
-# Function to download and upload video
 # Function to download and upload video
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
@@ -142,10 +124,8 @@ upload_file() {
             return
         fi
     fi
-
     # Activate virtual environment
     source "$VENV_DIR/bin/activate"
-    
     # Check if yt-dlp is installed
     if ! pip show yt-dlp >/dev/null 2>&1; then
         echo -e "${YELLOW}yt-dlp not found. Installing yt-dlp...${NC}"
@@ -159,13 +139,12 @@ upload_file() {
         fi
         echo -e "${GREEN}yt-dlp installed successfully!${NC}"
     fi
-
     # Prompt for search query
-    echo -e "${YELLOW}Enter a search query for the video (e.g歪: read query
+    echo -e "${YELLOW}Enter a search query for the video (e.g., 'random full hd'):${NC}"
+    read query
     echo -e "${BLUE}Downloading video...${NC}"
     python3 video_downloader.py "$query"
     deactivate
-
     # Check if video was downloaded
     if [ -f "combined_video.mp4" ]; then
         echo -e "${BLUE}Uploading video...${NC}"
@@ -192,8 +171,6 @@ EOF
     else
         echo -e "${RED}No video file found.${NC}"
     fi
-
-    deactivate
     return_to_menu
 }
 # Function to show uploaded file info
@@ -206,7 +183,6 @@ show_file_info() {
     fi
     return_to_menu
 }
-
 # Function to show referral stats and code
 show_referral() {
     echo -e "${BLUE}Your referral stats:${NC}"
@@ -215,19 +191,16 @@ show_referral() {
     pipe referral generate
     return_to_menu
 }
-
 # Function to check token usage
 check_token_usage() {
     echo -e "${BLUE}Checking token usage...${NC}"
     pipe token-usage
     return_to_menu
 }
-
 # Python script for video downloading
 cat << 'EOF' > video_downloader.py
 import yt_dlp
 import os
-
 def download_videos(query, target_size_mb=1000, max_filesize=1100*1024*1024):
     ydl_opts = {
         'format': 'best',
@@ -236,56 +209,46 @@ def download_videos(query, target_size_mb=1000, max_filesize=1100*1024*1024):
         'progress_hooks': [progress_hook],
         'outtmpl': '%(title)s.%(ext)s'
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(f"ytsearch20:{query}", download=False)
         videos = info.get("entries", [])
-
         candidates = []
         for v in videos:
             size = v.get("filesize") or v.get("filesize_approx")
             if size and size <= max_filesize:
                 candidates.append((size, v))
-
         if not candidates:
             print("\033[0;31m❌ No videos found within ~1GB.\033[0m")
             return
-
         total_size = 0
         selected = []
         for size, v in sorted(candidates, key=lambda x: -x[0]):
             if total_size + size <= target_size_mb * 1024 * 1024:
                 selected.append((size, v))
                 total_size += size
-
         if not selected:
             print("\033[0;31m❌ No videos found close to 1GB.\033[0m")
             return
-
         filenames = []
         for size, video in selected:
             print(f"\033[0;34m🎬 Downloading: {video['title']} ({size/(1024*1024):.2f} MB)\033[0m")
             ydl.download([video['webpage_url']])
             filename = ydl.prepare_filename(video)
             filenames.append(filename)
-
         output_file = "combined_video.mp4"
         with open(output_file, "wb") as outfile:
             for fname in filenames:
                 with open(fname, "rb") as infile:
                     outfile.write(infile.read())
-
         print(f"\033[0;32m✅ Video ready: {output_file} ({os.path.getsize(output_file)/(1024*1024):.2f} MB)\033[0m")
         for fname in filenames:
-            os.remove(fname)  # Clean up individual files
-
+            os.remove(fname) # Clean up individual files
 def progress_hook(d):
     if d['status'] == 'downloading':
         p = d.get('_percent_str', '0%').strip()
         print(f"\r\033[0;34m⬇️ Progress: {p}\033[0m", end='')
     elif d['status'] == 'finished':
         print("\r\033[0;32m✅ Download completed\033[0m")
-
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
@@ -293,7 +256,6 @@ if __name__ == "__main__":
     else:
         print("\033[0;31mPlease provide a search query.\033[0m")
 EOF
-
 # Menu
 while true; do
     clear
@@ -305,7 +267,6 @@ while true; do
     echo -e "${YELLOW}5. Check Token Usage${NC}"
     echo -e "${YELLOW}6. Exit${NC}"
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
-
     case $choice in
         1) install_node ;;
         2) upload_file ;;
