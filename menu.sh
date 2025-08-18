@@ -129,33 +129,48 @@ install_node() {
 }
 
 # Function to download and upload video
+# Function to download and upload video
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
+    # Check if virtual environment exists
     if [ ! -d "$VENV_DIR" ]; then
-        echo -e "${RED}Virtual environment not found. Please run option 1 to set up the environment.${NC}"
-        return_to_menu
-        return
+        echo -e "${RED}Virtual environment not found. Setting it up now...${NC}"
+        setup_venv
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Failed to set up virtual environment. Returning to menu.${NC}"
+            return_to_menu
+            return
+        fi
     fi
 
-    echo -e "${YELLOW}Enter a search query for the video (e.g., 'random full hd'):${NC}"
-    read query
-    echo -e "${BLUE}Downloading video...${NC}"
+    # Activate virtual environment
     source "$VENV_DIR/bin/activate"
-    if pip show yt-dlp >/dev/null 2>&1; then
-        python3 video_downloader.py "$query"
-    else
-        echo -e "${RED}yt-dlp not found in venv. Please run option 1 to set up the environment.${NC}"
-        deactivate
-        return_to_menu
-        return
+    
+    # Check if yt-dlp is installed
+    if ! pip show yt-dlp >/dev/null 2>&1; then
+        echo -e "${YELLOW}yt-dlp not found. Installing yt-dlp...${NC}"
+        pip install --upgrade pip
+        pip install yt-dlp
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Failed to install yt-dlp. Please check your internet connection or pip configuration.${NC}"
+            deactivate
+            return_to_menu
+            return
+        fi
+        echo -e "${GREEN}yt-dlp installed successfully!${NC}"
     fi
+
+    # Prompt for search query
+    echo -e "${YELLOW}Enter a search query for the video (e.g歪: read query
+    echo -e "${BLUE}Downloading video...${NC}"
+    python3 video_downloader.py "$query"
     deactivate
 
+    # Check if video was downloaded
     if [ -f "combined_video.mp4" ]; then
         echo -e "${BLUE}Uploading video...${NC}"
         upload_output=$(pipe upload-file ./combined_video.mp4 combined_video.mp4 2>&1)
         echo "$upload_output"
-
         # Extract File ID
         file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
         if [ -n "$file_id" ]; then
@@ -169,7 +184,6 @@ EOF
             echo -e "${BLUE}Creating public link for the uploaded file...${NC}"
             link_output=$(pipe create-public-link combined_video.mp4)
             echo "$link_output"
-
             echo -e "${BLUE}Deleting local video file...${NC}"
             rm -f combined_video.mp4
         else
@@ -178,9 +192,10 @@ EOF
     else
         echo -e "${RED}No video file found.${NC}"
     fi
+
+    deactivate
     return_to_menu
 }
-
 # Function to show uploaded file info
 show_file_info() {
     if [ -f "file_details.json" ]; then
