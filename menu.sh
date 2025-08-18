@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Counter for Ctrl+C presses
+# Counter for Ctrl+C presses AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 CTRL_C_COUNT=0
 
 # Trap Ctrl+C to allow graceful exit after one press
@@ -32,7 +32,7 @@ return_to_menu() {
     sleep 1
 }
 
-# Function to set up virtual environment and install yt-dlp via pipx
+# Function to set up Python environment
 setup_python_env() {
     echo -e "${BLUE}Installing pipx and setting up Python environment...${NC}"
     sudo apt install -y pipx
@@ -42,14 +42,23 @@ setup_python_env() {
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}yt-dlp installed successfully via pipx!${NC}"
     else
-        echo -e "${RED}Failed to install yt-dlp. Trying fallback with venv...${NC}"
+        echo -e "${YELLOW}pipx failed. Trying fallback with venv...${NC}"
         VENV_DIR="$HOME/pipe_venv"
         if [ ! -d "$VENV_DIR" ]; then
             echo -e "${BLUE}Creating Python virtual environment at $VENV_DIR...${NC}"
             python3 -m venv "$VENV_DIR"
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Failed to create virtual environment!${NC}"
+                return 1
+            fi
             source "$VENV_DIR/bin/activate"
             pip install --upgrade pip
             pip install yt-dlp
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Failed to install yt-dlp in venv!${NC}"
+                deactivate
+                return 1
+            fi
             deactivate
         else
             echo -e "${BLUE}Virtual environment already exists at $VENV_DIR.${NC}"
@@ -63,6 +72,9 @@ install_node() {
     sudo apt update && sudo apt upgrade -y
     sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv python3-pip pipx
     setup_python_env
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Python environment setup failed. Continuing without yt-dlp...${NC}"
+    fi
 
     echo -e "${BLUE}Installing Rust...${NC}"
     curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -135,9 +147,23 @@ upload_file() {
     if command -v yt-dlp >/dev/null 2>&1; then
         python3 video_downloader.py "$query"
     else
-        source "$HOME/pipe_venv/bin/activate"
-        python3 video_downloader.py "$query"
-        deactivate
+        VENV_DIR="$HOME/pipe_venv"
+        if [ -d "$VENV_DIR" ]; then
+            source "$VENV_DIR/bin/activate"
+            if pip show yt-dlp >/dev/null 2>&1; then
+                python3 video_downloader.py "$query"
+            else
+                echo -e "${RED}yt-dlp not found in venv. Please run option 1 to set up the environment.${NC}"
+                deactivate
+                return_to_menu
+                return
+            fi
+            deactivate
+        else
+            echo -e "${RED}Virtual environment not found. Please run option 1 to set up the environment.${NC}"
+            return_to_menu
+            return
+        fi
     fi
 
     if [ -f "combined_video.mp4" ]; then
