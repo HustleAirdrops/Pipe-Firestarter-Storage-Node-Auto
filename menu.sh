@@ -7,27 +7,53 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Trap Ctrl+C to prevent terminal exit and return to menu
-trap 'echo -e "${RED}\nCtrl+C detected. Returning to menu...${NC}"; return_to_menu' SIGINT
+# Counter for Ctrl+C presses
+CTRL_C_COUNT=0
+
+# Trap Ctrl+C to allow graceful exit after one press
+trap 'handle_ctrl_c' SIGINT
+
+# Function to handle Ctrl+C
+handle_ctrl_c() {
+    ((CTRL_C_COUNT++))
+    if [ $CTRL_C_COUNT -ge 2 ]; then
+        echo -e "${RED}Multiple Ctrl+C detected. Exiting...${NC}"
+        exit 0
+    fi
+    echo -e "${RED}Ctrl+C detected. Returning to menu...${NC}"
+    sleep 1
+    return_to_menu
+}
 
 # Function to return to menu
 return_to_menu() {
+    CTRL_C_COUNT=0 # Reset Ctrl+C counter
     echo -e "${BLUE}Returning to main menu...${NC}"
     sleep 1
 }
 
-# Function to set up virtual environment
-setup_venv() {
-    VENV_DIR="$HOME/pipe_venv"
-    if [ ! -d "$VENV_DIR" ]; then
-        echo -e "${BLUE}Creating Python virtual environment at $VENV_DIR...${NC}"
-        python3 -m venv "$VENV_DIR"
-        source "$VENV_DIR/bin/activate"
-        pip install --upgrade pip
-        pip install yt-dlp
-        deactivate
+# Function to set up virtual environment and install yt-dlp via pipx
+setup_python_env() {
+    echo -e "${BLUE}Installing pipx and setting up Python environment...${NC}"
+    sudo apt install -y pipx
+    pipx ensurepath
+    source ~/.bashrc
+    pipx install yt-dlp
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}yt-dlp installed successfully via pipx!${NC}"
     else
-        echo -e "${BLUE}Virtual environment already exists at $VENV_DIR.${NC}"
+        echo -e "${RED}Failed to install yt-dlp. Trying fallback with venv...${NC}"
+        VENV_DIR="$HOME/pipe_venv"
+        if [ ! -d "$VENV_DIR" ]; then
+            echo -e "${BLUE}Creating Python virtual environment at $VENV_DIR...${NC}"
+            python3 -m venv "$VENV_DIR"
+            source "$VENV_DIR/bin/activate"
+            pip install --upgrade pip
+            pip install yt-dlp
+            deactivate
+        else
+            echo -e "${BLUE}Virtual environment already exists at $VENV_DIR.${NC}"
+        fi
     fi
 }
 
@@ -35,8 +61,8 @@ setup_venv() {
 install_node() {
     echo -e "${BLUE}Updating system and installing dependencies...${NC}"
     sudo apt update && sudo apt upgrade -y
-    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv python3-pip
-    setup_venv
+    sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv python3-pip pipx
+    setup_python_env
 
     echo -e "${BLUE}Installing Rust...${NC}"
     curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -77,7 +103,7 @@ install_node() {
     echo -e "${YELLOW}Enter a referral code (or press Enter to use default):${NC}"
     read referral_code
     if [ -z "$referral_code" ]; then
-        referral_code="MAYANKGG-D4CJ"
+        referral_code="ITZMEAAS-PFJU"
         echo -e "${YELLOW}Using default referral code: $referral_code${NC}"
     fi
     echo -e "${BLUE}Applying referral code...${NC}"
@@ -106,9 +132,13 @@ upload_file() {
     echo -e "${YELLOW}Enter a search query for the video (e.g., 'random full hd'):${NC}"
     read query
     echo -e "${BLUE}Downloading video...${NC}"
-    source "$HOME/pipe_venv/bin/activate"
-    python3 video_downloader.py "$query"
-    deactivate
+    if command -v yt-dlp >/dev/null 2>&1; then
+        python3 video_downloader.py "$query"
+    else
+        source "$HOME/pipe_venv/bin/activate"
+        python3 video_downloader.py "$query"
+        deactivate
+    fi
 
     if [ -f "combined_video.mp4" ]; then
         echo -e "${BLUE}Uploading video...${NC}"
