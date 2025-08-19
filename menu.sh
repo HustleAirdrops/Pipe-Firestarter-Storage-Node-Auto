@@ -116,6 +116,17 @@ install_node() {
     solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
     echo -e "${GREEN}🔑 Your Solana Public Key: $solana_pubkey${NC}"
 
+    if [ -n "$solana_pubkey" ] && [ -f "$HOME/.pipe-cli.json" ]; then
+        jq --arg sp "$solana_pubkey" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json && mv tmp.json "$HOME/.pipe-cli.json"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-cli.json${NC}"
+        else
+            echo -e "${RED}❌ Failed to save Solana Public Key to ~/.pipe-cli.json${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Could not save Solana Public Key: File or key not found.${NC}"
+    fi
+
     echo -e "${BLUE}💾 Your credentials are below. Copy and save them, then press Enter to continue:${NC}"
     cat "/home/$USER/.pipe-cli.json"
     read -s -p "Press Enter after saving your credentials..."
@@ -193,11 +204,9 @@ upload_file() {
         social_link=$(echo "$link_output" | grep "Social media link" -A 1 | tail -n 1 | awk '{$1=$1};1')
         if [ -n "$file_id" ]; then
             echo -e "${BLUE}💾 Saving file details to file_details.json...${NC}"
-            # Initialize file_details.json as array if it doesn't exist
             if [ ! -f "file_details.json" ]; then
                 echo "[]" > file_details.json
             fi
-            # Append new file details to the JSON array
             jq --arg fn "$output_file" --arg fid "$file_id" --arg dl "$direct_link" --arg sl "$social_link" \
                 '. + [{"file_name": $fn, "file_id": $fid, "direct_link": $dl, "social_link": $sl}]' \
                 file_details.json > tmp.json && mv tmp.json file_details.json
@@ -255,6 +264,7 @@ show_credentials() {
         echo -e "${YELLOW}👤 Username: ${GREEN}$username${NC}"
         echo -e "${YELLOW}🆔 User ID: ${GREEN}$user_id${NC}"
         echo -e "${YELLOW}🔐 User App Key: ${GREEN}$user_app_key${NC}"
+        echo -e "${YELLOW}🔑 Solana Public Key: ${GREEN}$solana_pubkey${NC}"
         echo -e "${YELLOW}🔒 Auth Tokens:${NC}"
         echo -e "${YELLOW}📜 Token Type: ${GREEN}$token_type${NC}"
         echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
