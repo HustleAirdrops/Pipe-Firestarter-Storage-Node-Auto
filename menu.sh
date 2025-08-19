@@ -4,15 +4,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+BOLD='\033[1m'
 CTRL_C_COUNT=0
 
 trap 'handle_ctrl_c' SIGINT
-
+#AAAAAA
 show_header() {
     clear
     echo -e "${BLUE}${BOLD}"
     echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│  ██╗░░██╗██╗░░░██╗░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗  │"
+    echo "│  ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗  │"
     echo "│  ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝  │"
     echo "│  ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░  │"
     echo "│  ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗  │"
@@ -28,10 +29,10 @@ show_header() {
 handle_ctrl_c() {
     ((CTRL_C_COUNT++))
     if [ $CTRL_C_COUNT -ge 2 ]; then
-        echo -e "${RED}🚨 Multiple Ctrl+C detected. Exiting...${NC}"
+        echo -e "\n${RED}🚨 Multiple Ctrl+C detected. Exiting...${NC}"
         exit 0
     fi
-    echo -e "${RED}🚨 Ctrl+C detected. Returning to menu...${NC}"
+    echo -e "\n${RED}🚨 Ctrl+C detected. Returning to menu...${NC}"
     sleep 1
     return_to_menu
 }
@@ -93,6 +94,7 @@ install_node() {
         fi
         echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
     fi
+    stty echo
     read -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
@@ -104,6 +106,7 @@ install_node() {
     cat /home/$USER/.pipe-cli.json
     read -s
     clear
+    stty echo
     read -p "$(echo -e ${YELLOW}🔗 Enter a referral code \(or press Enter to use default\): ${NC})" referral_code
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
@@ -113,6 +116,7 @@ install_node() {
     pipe referral apply "$referral_code"
     pipe referral generate >/dev/null 2>&1
     echo -e "${YELLOW}💰 Claim 5 Devnet SOL from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
+    stty echo
     read -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
     if [ "$confirmation" = "yes" ]; then
         echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
@@ -149,6 +153,7 @@ upload_file() {
         fi
         echo -e "${GREEN}✅ yt-dlp installed successfully!${NC}"
     fi
+    stty echo
     read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'random full hd'\): ${NC})" query
     echo -e "${BLUE}📥 Downloading video...${NC}"
     random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
@@ -230,6 +235,7 @@ show_credentials() {
         echo -e "${YELLOW}📜 Token Type: ${GREEN}$token_type${NC}"
         echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
         echo -e "${YELLOW}📅 Expires At: ${GREEN}$expires_at${NC}"
+        stty echo
         read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         if [ "$show_full" = "y" ] || [ "$show_full" = "Y" ]; then
             echo -e "${YELLOW}🔑 Access Token: ${GREEN}$access_token${NC}"
@@ -356,9 +362,8 @@ if __name__ == "__main__":
     else:
         print("\033[0;31mPlease provide a search query and output filename.\033[0m")
 EOF
-======
+
 while true; do
-    clear
     show_header
     echo -e "${BLUE}${BOLD}======================= Pipe NODE MANAGER BY Aashish 💖 =======================${NC}"
     echo -e "${YELLOW}1. 🛠️ Install Node${NC}"
@@ -369,6 +374,7 @@ while true; do
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
+    stty echo
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
     case $choice in
         1) install_node ;;
