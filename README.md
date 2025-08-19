@@ -29,30 +29,35 @@ After running the command, you'll see a menu like this:
 8. ❌ Exit
 ```
 
-**Menu Actions:**  
-- **1:** Install the node (first-time setup)
-- **2:** Upload a video (up to 1GB per upload; aim for 5–15GB total)
-- **3:** View info about your uploaded files
-- **4:** See your referral stats and code
-- **5:** Check your token usage
-- **6:** Display your credentials
-- **7:** Swap your tokens
-- **8:** Exit the script
+## 📝 Menu Actions Explained
+
+| Option | Action                                   | Details                                                                                   |
+|:------:|:-----------------------------------------|:------------------------------------------------------------------------------------------|
+| **1**  | 🛠️ **Install Node**                      | - Start first-time setup<br>- Enter username & password<br>- Save credentials shown<br>- Copy your Solana address<br>- [Get 5 SOL (devnet)](https://faucet.solana.com/)<br>- Enter `yes` to complete swap |
+| **2**  | ⬆️ **Upload Video**                      | - Upload videos up to **1GB** each<br>- Aim for **5–15GB** total                          |
+| **3**  | 📄 **Show Uploaded File Info**            | - View info about your uploaded files                                                     |
+| **4**  | 🔗 **Show Referral Stats and Code**       | - See your referral stats and code                                                        |
+| **5**  | 📈 **Check Token Usage**                  | - Monitor your token usage                                                                |
+| **6**  | 🔑 **Show Credentials**                   | - Display your saved credentials                                                          |
+| **7**  | 🔥 **Swap Tokens**                        | - Swap your tokens                                                                        |
+| **8**  | ❌ **Exit**                               | - Exit the script                                                                         |
+
+> 💡 **Tip:** Always save your credentials and Solana address securely!
 
 ---
 
 ## 🎯 How to Earn 🔥Firestarter Role
 
 1. **Share your contribution proof**
-    - **Step 1:** Upload your video(s) using the menu.
-    - **Step 2:** Take a screenshot of your uploaded file info (with the public link).
-    - **Step 3:** Share the screenshot and public link in the `#firestarter-storage-share` channel on Discord.
-    - **Step 4:** The team will verify and grant you the role!
+        - **Step 1:** Upload your video(s) using the menu.
+        - **Step 2:** Take a screenshot of your uploaded file info (with the public link).
+        - **Step 3:** Share the screenshot and public link in the `#firestarter-storage-share` channel on Discord.
+        - **Step 4:** The team will verify and grant you the role!
 
 2. **Make a good tweet**
-    - **Step 1:** Post your screenshot and public file link on Twitter with positive feedback about the project.
-    - **Step 2:** Copy your tweet link and share it in the `#pipe-community-social` channel on Discord.
-    - **Step 3:** The team will verify and grant you the role!
+        - **Step 1:** Post your screenshot and public file link on Twitter with positive feedback about the project.
+        - **Step 2:** Copy your tweet link and share it in the `#pipe-community-social` channel on Discord.
+        - **Step 3:** The team will verify and grant you the role!
 
 **Discord Invite:** [Join the Discord server](https://discord.gg/fyDRfCVWJA)
 
