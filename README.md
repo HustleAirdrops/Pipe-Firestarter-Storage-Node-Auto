@@ -29,20 +29,42 @@ After running the command, you'll see a menu like this:
 8. ❌ Exit
 ```
 
-## 📝 Menu Actions Explained
+## 🧭 What Can You Do With the Menu?
 
-| Option | Action                                   | Details                                                                                   |
-|:------:|:-----------------------------------------|:------------------------------------------------------------------------------------------|
-| **1**  | 🛠️ **Install Node**                      | - Start first-time setup<br>- Enter username & password<br>- Save credentials shown<br>- Copy your Solana address<br>- [Get 5 SOL (devnet)](https://faucet.solana.com/)<br>- Enter `yes` to complete swap |
-| **2**  | 📹 **Upload Video**                      | - Choose from 4 upload methods:<br> **1. Upload from YouTube (yt-dlp):** the video will be downloaded and uploaded automatically.<br> **2. Upload from Pixabay:** Requires a Pixabay API key (get it from [Pixabay API Docs](https://pixabay.com/api/docs/) after signing up). Enter your API key, search and enter query to upload.<br> **3. Upload from Pexels:** Requires a Pexels API key (get it from [Pexels API](https://www.pexels.com/api/) after signing up). Enter your API key, search and enter query to upload.<br> **4. Manual Upload:** Import a video file in home or pipe folder and upload it.<br>- Each video can be up to **1GB**; aim for **5–15GB** total. |
-| **3**  | 📄 **Show Uploaded File Info**            | - View info about your uploaded files                                                     |
-| **4**  | 🔗 **Show Referral Stats and Code**       | - See your referral stats and code                                                        |
-| **5**  | 📈 **Check Token Usage**                  | - Monitor your token usage                                                                |
-| **6**  | 🔑 **Show Credentials**                   | - Display your saved credentials                                                          |
-| **7**  | 🔥 **Swap Tokens**                        | - Swap your tokens                                                                        |
-| **8**  | ❌ **Exit**                               | - Exit the script                                                                         |
+The interactive menu makes everything simple. Here’s what each action lets you do:
 
-> 💡 **Tip:** Always save your credentials and Solana address securely!
+- **🛠️ Install Node:**  
+    Set up your storage node for the first time. Enter your username and password, save your credentials, and connect your Solana wallet. You’ll need some test SOL (get it [here](https://faucet.solana.com/)) to complete the setup.
+
+- **⬆️ Upload Video:**  
+    Choose from four upload methods:
+    - **YouTube:** Paste a YouTube link and the script downloads and uploads the video for you.
+    - **Pixabay:** Enter your Pixabay API key, search for a video, and upload it.
+    - **Pexels:** Enter your Pexels API key, search for a video, and upload it.
+    - **Manual:** Select a video file from your computer and upload it.
+
+- **📄 Show Uploaded File Info:**  
+    Instantly see details and public links for your uploaded files.
+
+- **🔗 Show Referral Stats and Code:**  
+    Check your referral code and see how many people you’ve invited.
+
+- **📈 Check Token Usage:**  
+    Monitor your token balance and usage.
+
+- **🔑 Show Credentials:**  
+    View your saved login details and wallet address.
+
+- **🔥 Swap Tokens:**  
+    Swap your earned tokens directly from the menu.
+
+- **❌ Exit:**  
+    Quit the script safely.
+
+---
+
+> **Pro Tip:**  
+> Save your credentials and Solana address somewhere safe. You’ll need them to access your node and rewards!
 
 ---
 
