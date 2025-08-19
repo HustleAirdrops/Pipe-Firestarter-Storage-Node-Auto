@@ -8,7 +8,7 @@ BOLD='\033[1m'
 CTRL_C_COUNT=0
 IN_MENU=0
 
-trap 'handle_ctrl_c' SIGINT
+trap 'handle_ctrl_c' SIGINT #AAAAAAAAAAAAAAA
 
 show_header() {
     clear
