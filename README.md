@@ -56,7 +56,7 @@ The interactive menu makes everything simple. Here’s what each action lets you
     View your saved login details and wallet address.
 
 - **🔥 Swap Tokens:**  
-    Swap your earned tokens directly from the menu.
+    Swap your tokens directly from the menu.
 
 - **❌ Exit:**  
     Quit the script safely.
