@@ -60,13 +60,13 @@ setup_venv() {
     fi
     source "$VENV_DIR/bin/activate"
     pip install --upgrade pip
-    pip install yt-dlp
+    pip install yt-dlp requests
     if [ $? -ne 0 ]; then
-        echo -e "${RED}❌ Failed to install yt-dlp in venv!${NC}"
+        echo -e "${RED}❌ Failed to install packages in venv!${NC}"
         deactivate
         return 1
     fi
-    echo -e "${GREEN}✅ yt-dlp installed successfully in venv!${NC}"
+    echo -e "${GREEN}✅ Packages installed successfully in venv!${NC}"
     deactivate
 }
 
@@ -97,7 +97,7 @@ install_node() {
     else
         echo -e "${BLUE}🔄 Updating system and installing dependencies...${NC}"
         sudo apt update && sudo apt upgrade -y
-        sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv
+        sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv ffmpeg
 
         setup_venv
         if [ $? -ne 0 ]; then
@@ -195,55 +195,120 @@ upload_file() {
         fi
     fi
     source "$VENV_DIR/bin/activate"
-    if ! pip show yt-dlp >/dev/null 2>&1; then
-        echo -e "${YELLOW}🛠️ yt-dlp not found. Installing yt-dlp...${NC}"
+    if ! pip show yt-dlp >/dev/null 2>&1 || ! pip show requests >/dev/null 2>&1; then
+        echo -e "${YELLOW}🛠️ Installing missing packages...${NC}"
         pip install --upgrade pip
-        pip install yt-dlp
+        pip install yt-dlp requests
         if [ $? -ne 0 ]; then
-            echo -e "${RED}❌ Failed to install yt-dlp. Please check your internet connection or pip configuration.${NC}"
+            echo -e "${RED}❌ Failed to install packages. Please check your internet connection or pip configuration.${NC}"
             deactivate
             return_to_menu
             return
         fi
-        echo -e "${GREEN}✅ yt-dlp installed successfully!${NC}"
+        echo -e "${GREEN}✅ Packages installed successfully!${NC}"
     fi
-    stty echo
-    read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'random full hd'\): ${NC})" query
-    echo -e "${BLUE}📥 Downloading video...${NC}"
-    random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-    output_file="video_$random_suffix.mp4"
-    python3 video_downloader.py "$query" "$output_file"
-    deactivate
-    if [ -f "$output_file" ]; then
-        echo -e "${BLUE}⬆️ Uploading video...${NC}"
-        # Automatically setup path if pipe command fails
-        if ! command -v pipe >/dev/null 2>&1; then
-            setup_pipe_path
-        fi
-        upload_output=$(pipe upload-file "./$output_file" "$output_file" 2>&1)
-        echo "$upload_output"
-        file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
-        link_output=$(pipe create-public-link "$output_file")
-        echo "$link_output"
-        direct_link=$(echo "$link_output" | grep "Direct link" -A 1 | tail -n 1 | awk '{$1=$1};1')
-        social_link=$(echo "$link_output" | grep "Social media link" -A 1 | tail -n 1 | awk '{$1=$1};1')
-        if [ -n "$file_id" ]; then
-            echo -e "${BLUE}💾 Saving file details to file_details.json...${NC}"
-            if [ ! -f "file_details.json" ]; then
-                echo "[]" > file_details.json
+
+    while true; do
+        clear
+        show_header
+        echo -e "${BLUE}${BOLD}======================= Upload File Submenu =======================${NC}"
+        echo -e "${YELLOW}1. 📹 Upload from YouTube (yt-dlp)${NC}"
+        echo -e "${YELLOW}2. 🎥 Upload from Pixabay${NC}"
+        echo -e "${YELLOW}3. 🗂️ Manual Upload (from home or pipe folder)${NC}"
+        echo -e "${YELLOW}4. 🔙 Back to Main Menu${NC}"
+        echo -e "${BLUE}=================================================================${NC}"
+        read -p "$(echo -e ${YELLOW}Select an option: ${NC})" subchoice
+        case $subchoice in
+            1)
+                read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'random full hd'\): ${NC})" query
+                echo -e "${BLUE}📥 Downloading video from YouTube...${NC}"
+                random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+                output_file="video_$random_suffix.mp4"
+                python3 video_downloader.py "$query" "$output_file"
+                ;;
+            2)
+                API_KEY_FILE="$HOME/.pixabay_api_key"
+                if [ ! -f "$API_KEY_FILE" ]; then
+                    read -p "$(echo -e ${YELLOW}🔑 Enter your Pixabay API key: ${NC})" api_key
+                    echo "$api_key" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ API key saved for future use.${NC}"
+                fi
+                read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'nature'\): ${NC})" query
+                echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
+                random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+                output_file="video_$random_suffix.mp4"
+                python3 pixabay_downloader.py "$query" "$output_file"
+                ;;
+            3)
+                echo -e "${BLUE}🔍 Searching for .mp4 files in $HOME and $HOME/pipe...${NC}"
+                videos=($(find "$HOME" "$HOME/pipe" -type f -name "*.mp4" 2>/dev/null))
+                if [ ${#videos[@]} -eq 0 ]; then
+                    echo -e "${RED}❌ No .mp4 files found.${NC}"
+                    return_to_menu
+                    continue
+                fi
+                echo -e "${YELLOW}Available videos:${NC}"
+                for i in "${!videos[@]}"; do
+                    size=$(du -h "${videos[i]}" | cut -f1)
+                    echo "$((i+1)). ${videos[i]} ($size)"
+                done
+                read -p "$(echo -e ${YELLOW}Select a number: ${NC})" num
+                if [[ $num =~ ^[0-9]+$ ]] && [ $num -ge 1 ] && [ $num -le ${#videos[@]} ]; then
+                    selected="${videos[$((num-1))]}"
+                    output_file="${selected##*/}"
+                    echo -e "${GREEN}✅ Selected: $selected${NC}"
+                    # For manual, no download, directly upload, don't delete
+                    ;;
+                else
+                    echo -e "${RED}❌ Invalid selection.${NC}"
+                    return_to_menu
+                    continue
+                fi
+                ;;
+            4) deactivate; return ;;
+            *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1; continue ;;
+        esac
+
+        deactivate
+
+        if [ -f "$output_file" ] || [ "$subchoice" = "3" ]; then
+            if [ "$subchoice" = "3" ]; then
+                file_to_upload="$selected"
+            else
+                file_to_upload="$output_file"
             fi
-            jq --arg fn "$output_file" --arg fid "$file_id" --arg dl "$direct_link" --arg sl "$social_link" \
-                '. + [{"file_name": $fn, "file_id": $fid, "direct_link": $dl, "social_link": $sl}]' \
-                file_details.json > tmp.json && mv tmp.json file_details.json
-            echo -e "${BLUE}🗑️ Deleting local video file...${NC}"
-            rm -f "$output_file"
+            echo -e "${BLUE}⬆️ Uploading video...${NC}"
+            # Automatically setup path if pipe command fails
+            if ! command -v pipe >/dev/null 2>&1; then
+                setup_pipe_path
+            fi
+            upload_output=$(pipe upload-file "$file_to_upload" "$output_file" 2>&1)
+            echo "$upload_output"
+            file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
+            link_output=$(pipe create-public-link "$output_file")
+            echo "$link_output"
+            direct_link=$(echo "$link_output" | grep "Direct link" -A 1 | tail -n 1 | awk '{$1=$1};1')
+            social_link=$(echo "$link_output" | grep "Social media link" -A 1 | tail -n 1 | awk '{$1=$1};1')
+            if [ -n "$file_id" ]; then
+                echo -e "${BLUE}💾 Saving file details to file_details.json...${NC}"
+                if [ ! -f "file_details.json" ]; then
+                    echo "[]" > file_details.json
+                fi
+                jq --arg fn "$output_file" --arg fid "$file_id" --arg dl "$direct_link" --arg sl "$social_link" \
+                    '. + [{"file_name": $fn, "file_id": $fid, "direct_link": $dl, "social_link": $sl}]' \
+                    file_details.json > tmp.json && mv tmp.json file_details.json
+                if [ "$subchoice" != "3" ]; then
+                    echo -e "${BLUE}🗑️ Deleting local video file...${NC}"
+                    rm -f "$output_file"
+                fi
+            else
+                echo -e "${RED}❌ Failed to extract File ID.${NC}"
+            fi
         else
-            echo -e "${RED}❌ Failed to extract File ID.${NC}"
+            echo -e "${RED}❌ No video file found.${NC}"
         fi
-    else
-        echo -e "${RED}❌ No video file found.${NC}"
-    fi
-    return_to_menu
+        return_to_menu
+    done
 }
 
 show_file_info() {
@@ -283,8 +348,8 @@ show_credentials() {
         token_type=$(jq -r '.auth_tokens.token_type' "$HOME/.pipe-cli.json")
         expires_in=$(jq -r '.auth_tokens.expires_in' "$HOME/.pipe-cli.json")
         expires_at=$(jq -r '.auth_tokens.expires_at' "$HOME/.pipe-cli.json")
+        solana_pubkey=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json")
         
-        stty echo
         read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         echo -e "${YELLOW}👤 Username: ${GREEN}$username${NC}"
         echo -e "${YELLOW}🆔 User ID: ${GREEN}$user_id${NC}"
@@ -332,6 +397,7 @@ swap_tokens() {
     else
         echo "⚠️ Error while swapping tokens."
     fi
+    return_to_menu
 }
 
 check_token_usage() {
@@ -347,6 +413,7 @@ import sys
 import time
 import random
 import string
+import subprocess
 
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
@@ -374,7 +441,7 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
     total_downloaded = 0
     total_size = 0
     start_time = time.time()
-    filenames = []
+    downloaded_files = []
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(f"ytsearch20:{query}", download=False)
@@ -392,35 +459,37 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
         for size, v in sorted(candidates, key=lambda x: -x[0]):
             if total_size + size <= target_size_mb * 1024 * 1024:
                 total_size += size
-                filenames.append((size, v))
-        
-        if not filenames:
-            print("\033[0;31m❌ No videos found close to 1GB.\033[0m")
-            return
+                current_file = len(downloaded_files) + 1
+                print(f"\033[0;34m🎬 Downloading video {current_file}: {v['title']} ({format_size(size)})\033[0m")
+                ydl.download([v['webpage_url']])
+                filename = ydl.prepare_filename(v)
+                downloaded_files.append(filename)
+                total_downloaded += size
+                
+                elapsed = time.time() - start_time
+                speed = total_downloaded / (1024*1024*elapsed) if elapsed > 0 else 0
+                eta = (total_size - total_downloaded) / (speed * 1024*1024) if speed > 0 else 0
+                
+                print(f"\033[0;32m✅ Overall Progress: {draw_progress_bar(total_downloaded, total_size)} "
+                      f"({format_size(total_downloaded)}/{format_size(total_size)}) "
+                      f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m")
 
-        total_files = len(filenames)
-        current_file = 0
-        
-        for size, video in filenames:
-            current_file += 1
-            print(f"\033[0;34m🎬 Downloading video {current_file}/{total_files}: {video['title']} ({format_size(size)})\033[0m")
-            ydl.download([video['webpage_url']])
-            filename = ydl.prepare_filename(video)
-            total_downloaded += size
-            with open(filename, "rb") as infile:
-                with open(output_file, "ab") as outfile:
-                    outfile.write(infile.read())
-            os.remove(filename)
-            
-            elapsed = time.time() - start_time
-            speed = total_downloaded / (1024*1024*elapsed) if elapsed > 0 else 0
-            eta = (total_size - total_downloaded) / (speed * 1024*1024) if speed > 0 else 0
-            
-            print(f"\033[0;32m✅ Overall Progress: {draw_progress_bar(total_downloaded, total_size)} "
-                  f"({format_size(total_downloaded)}/{format_size(total_size)}) "
-                  f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m")
+    if not downloaded_files:
+        print("\033[0;31m❌ No videos found close to 1GB.\033[0m")
+        return
 
-        print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
+    if len(downloaded_files) == 1:
+        os.rename(downloaded_files[0], output_file)
+    else:
+        with open('list.txt', 'w') as f:
+            for fn in downloaded_files:
+                f.write(f"file '{fn}'\n")
+        subprocess.call(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', output_file])
+        os.remove('list.txt')
+        for fn in downloaded_files:
+            os.remove(fn)
+
+    print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
 
 def progress_hook(d):
     if d['status'] == 'downloading':
@@ -433,6 +502,113 @@ def progress_hook(d):
               f"Speed: {speed/(1024*1024):.2f} MB/s ETA: {format_time(eta)}\033[0m", end='')
     elif d['status'] == 'finished':
         print("\r\033[0;32m✅ File Download completed\033[0m")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 2:
+        download_videos(sys.argv[1], sys.argv[2])
+    else:
+        print("\033[0;31mPlease provide a search query and output filename.\033[0m")
+EOF
+
+cat << 'EOF' > pixabay_downloader.py
+import requests
+import os
+import sys
+import time
+import random
+import string
+import subprocess
+
+def format_size(bytes_size):
+    return f"{bytes_size/(1024*1024):.2f} MB"
+
+def format_time(seconds):
+    mins = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{mins:02d}:{secs:02d}"
+
+def draw_progress_bar(progress, total, width=50):
+    percent = progress / total * 100
+    filled = int(width * progress // total)
+    bar = '█' * filled + '-' * (width - filled)
+    return f"[{bar}] {percent:.1f}%"
+
+def download_videos(query, output_file, target_size_mb=1000):
+    api_key_file = os.path.expanduser('~/.pixabay_api_key')
+    if not os.path.exists(api_key_file):
+        print("\033[0;31m❌ Pixabay API key file not found.\033[0m")
+        return
+    with open(api_key_file, 'r') as f:
+        api_key = f.read().strip()
+
+    per_page = 100
+    url = f"https://pixabay.com/api/videos/?key={api_key}&q={query}&per_page={per_page}&min_width=1920&min_height=1080&video_type=all"
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        print("\033[0;31m❌ Error fetching Pixabay API: {resp.text}\033[0m")
+        return
+    data = resp.json()
+    videos = data.get('hits', [])
+    if not videos:
+        print("\033[0;31m❌ No videos found for query.\033[0m")
+        return
+
+    videos.sort(key=lambda x: x['duration'], reverse=True)
+
+    downloaded_files = []
+    total_size = 0
+    total_downloaded = 0
+    start_time = time.time()
+
+    for i, v in enumerate(videos):
+        video_url = v['videos'].get('large', {}).get('url') or v['videos'].get('medium', {}).get('url')
+        if not video_url:
+            continue
+        filename = f"pix_{i}_{''.join(random.choices(string.ascii_letters + string.digits, k=8))}.mp4"
+        print(f"\033[0;34m🎬 Downloading video {i+1}: {v['tags']} ({v['duration']}s)\033[0m")
+        resp = requests.get(video_url, stream=True)
+        size = int(resp.headers.get('content-length', 0))
+        if size < 50 * 1024 * 1024:  # Skip if <50MB
+            continue
+        with open(filename, 'wb') as f:
+            downloaded = 0
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    percent = downloaded / size * 100 if size else 0
+                    speed = downloaded / (1024*1024 * (time.time() - start_time)) if (time.time() - start_time) > 0 else 0
+                    eta = (size - downloaded) / (speed * 1024*1024) if speed > 0 else 0
+                    print(f"\r\033[0;34m⬇️ File Progress: {draw_progress_bar(downloaded, size)} "
+                          f"({format_size(downloaded)}/{format_size(size)}) "
+                          f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m", end='')
+        print("\r\033[0;32m✅ File Download completed\033[0m")
+        file_size = os.path.getsize(filename)
+        if file_size == 0:
+            os.remove(filename)
+            continue
+        total_size += file_size
+        total_downloaded += file_size
+        downloaded_files.append(filename)
+        if total_size >= target_size_mb * 1024 * 1024:
+            break
+
+    if not downloaded_files:
+        print("\033[0;31m❌ No suitable videos downloaded.\033[0m")
+        return
+
+    if len(downloaded_files) == 1:
+        os.rename(downloaded_files[0], output_file)
+    else:
+        with open('list.txt', 'w') as f:
+            for fn in downloaded_files:
+                f.write(f"file '{fn}'\n")
+        subprocess.call(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', output_file])
+        os.remove('list.txt')
+        for fn in downloaded_files:
+            os.remove(fn)
+
+    print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
@@ -454,7 +630,6 @@ while true; do
     echo -e "${YELLOW}8. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
-    stty echo
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
     IN_MENU=0
     case $choice in
