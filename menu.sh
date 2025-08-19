@@ -8,7 +8,7 @@ BOLD='\033[1m'
 CTRL_C_COUNT=0
 
 trap 'handle_ctrl_c' SIGINT
-#AAAAAA
+
 show_header() {
     clear
     echo -e "${BLUE}${BOLD}"
@@ -228,6 +228,8 @@ show_credentials() {
         expires_in=$(jq -r '.auth_tokens.expires_in' "$HOME/.pipe-cli.json")
         expires_at=$(jq -r '.auth_tokens.expires_at' "$HOME/.pipe-cli.json")
         
+        stty echo
+        read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         echo -e "${YELLOW}👤 Username: ${GREEN}$username${NC}"
         echo -e "${YELLOW}🆔 User ID: ${GREEN}$user_id${NC}"
         echo -e "${YELLOW}🔐 User App Key: ${GREEN}$user_app_key${NC}"
@@ -235,8 +237,6 @@ show_credentials() {
         echo -e "${YELLOW}📜 Token Type: ${GREEN}$token_type${NC}"
         echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
         echo -e "${YELLOW}📅 Expires At: ${GREEN}$expires_at${NC}"
-        stty echo
-        read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         if [ "$show_full" = "y" ] || [ "$show_full" = "Y" ]; then
             echo -e "${YELLOW}🔑 Access Token: ${GREEN}$access_token${NC}"
             echo -e "${YELLOW}🔄 Refresh Token: ${GREEN}$refresh_token${NC}"
