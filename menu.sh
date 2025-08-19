@@ -70,6 +70,26 @@ setup_venv() {
     deactivate
 }
 
+setup_pipe_path() {
+    # Optional function to setup pipe path without exiting or throwing errors
+    if [ -f "$HOME/.cargo/bin/pipe" ]; then
+        if ! grep -q "export PATH=\$HOME/.cargo/bin:\$PATH" ~/.bashrc; then
+            echo 'export PATH=$HOME/.cargo/bin:$PATH' >> ~/.bashrc
+            echo -e "${GREEN}✅ Added pipe path to ~/.bashrc.${NC}"
+        fi
+        export PATH=$HOME/.cargo/bin:$PATH
+        echo -e "${GREEN}✅ Updated PATH with pipe location.${NC}"
+        if [ -f "$HOME/.cargo/env" ]; then
+            source $HOME/.cargo/env
+            echo -e "${GREEN}✅ Reloaded cargo environment.${NC}"
+        fi
+        chmod +x $HOME/.cargo/bin/pipe
+        echo -e "${GREEN}✅ Ensured pipe is executable.${NC}"
+    else
+        echo -e "${YELLOW}⚠️ Pipe binary not found. Please run install_node first.${NC}"
+    fi
+}
+
 install_node() {
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
     if command -v pipe >/dev/null 2>&1; then
@@ -94,12 +114,12 @@ install_node() {
         cargo install --path .
         cd $HOME
 
-        echo 'export PATH=$PATH:$HOME/.cargo/bin' >> ~/.bashrc
-        source ~/.bashrc
+        # Call setup_pipe_path to handle path configuration
+        setup_pipe_path
 
         echo -e "${BLUE}🔍 Verifying Pipe installation...${NC}"
         if ! pipe -h >/dev/null 2>&1; then
-            echo -e "${RED}❌ Pipe installation failed!${NC}"
+            echo -e "${RED}❌ Pipe installation failed! Checking PATH: $PATH${NC}"
             return_to_menu
             return
         fi
@@ -160,7 +180,6 @@ install_node() {
     fi
     return_to_menu
 }
-
 
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
@@ -426,7 +445,8 @@ while true; do
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. 🔥 Swap tokens${NC}"
-    echo -e "${YELLOW}8. ❌ Exit${NC}"
+    echo -e "${YELLOW}8. 🔧 Setup Pipe Path (if needed)${NC}" # Added new option
+    echo -e "${YELLOW}9. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
     stty echo
@@ -440,7 +460,8 @@ while true; do
         5) check_token_usage ;;
         6) show_credentials ;;
         7) swap_tokens ;;
-        8) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
+        8) setup_pipe_path ;; # Added call to new function
+        9) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
         *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
 done
