@@ -8,6 +8,23 @@ CTRL_C_COUNT=0
 
 trap 'handle_ctrl_c' SIGINT
 
+show_header() {
+    clear
+    echo -e "${BLUE}${BOLD}"
+    echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
+    echo "│  ██╗░░██╗██╗░░░██╗░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗  │"
+    echo "│  ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝  │"
+    echo "│  ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░  │"
+    echo "│  ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗  │"
+    echo "│  ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝  │"
+    echo "│  ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░  │"
+    echo "└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
+    echo -e "${YELLOW}                  🚀 Pipe Node Manager by Aashish 🚀${NC}"
+    echo -e "${YELLOW}              GitHub: https://github.com/HustleAirdrops${NC}"
+    echo -e "${YELLOW}              Telegram: https://t.me/Hustle_Airdrops${NC}"
+    echo -e "${GREEN}===============================================================================${NC}"
+}
+
 handle_ctrl_c() {
     ((CTRL_C_COUNT++))
     if [ $CTRL_C_COUNT -ge 2 ]; then
@@ -21,8 +38,8 @@ handle_ctrl_c() {
 
 return_to_menu() {
     CTRL_C_COUNT=0
-    echo -e "${BLUE}🔙 Returning to main menu... Press Enter to continue.${NC}"
-    read -s
+    echo -e "\n${YELLOW}🔁 Press Enter to return to menu...${NC}"
+    read
 }
 
 setup_venv() {
@@ -76,8 +93,7 @@ install_node() {
         fi
         echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
     fi
-    echo -e "${YELLOW}👤 Enter your desired username:${NC}"
-    read username
+    read -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
     echo -e "${GREEN}✅ User created. Save these details:${NC}"
@@ -88,8 +104,7 @@ install_node() {
     cat /home/$USER/.pipe-cli.json
     read -s
     clear
-    echo -e "${YELLOW}🔗 Enter a referral code (or press Enter to use default):${NC}"
-    read referral_code
+    read -p "$(echo -e ${YELLOW}🔗 Enter a referral code \(or press Enter to use default\): ${NC})" referral_code
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
         echo -e "${YELLOW}🔗 Using default referral code: $referral_code${NC}"
@@ -98,8 +113,7 @@ install_node() {
     pipe referral apply "$referral_code"
     pipe referral generate >/dev/null 2>&1
     echo -e "${YELLOW}💰 Claim 5 Devnet SOL from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
-    echo -e "${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL:${NC}"
-    read confirmation
+    read -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
     if [ "$confirmation" = "yes" ]; then
         echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
         pipe swap-sol-for-pipe 2
@@ -135,8 +149,7 @@ upload_file() {
         fi
         echo -e "${GREEN}✅ yt-dlp installed successfully!${NC}"
     fi
-    echo -e "${YELLOW}🔍 Enter a search query for the video (e.g., 'random full hd'):${NC}"
-    read query
+    read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'random full hd'\): ${NC})" query
     echo -e "${BLUE}📥 Downloading video...${NC}"
     random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
     output_file="video_$random_suffix.mp4"
@@ -217,8 +230,7 @@ show_credentials() {
         echo -e "${YELLOW}📜 Token Type: ${GREEN}$token_type${NC}"
         echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
         echo -e "${YELLOW}📅 Expires At: ${GREEN}$expires_at${NC}"
-        echo -e "${YELLOW}🔍 Show full Access and Refresh Tokens? (y/n, default n):${NC}"
-        read -r show_full
+        read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         if [ "$show_full" = "y" ] || [ "$show_full" = "Y" ]; then
             echo -e "${YELLOW}🔑 Access Token: ${GREEN}$access_token${NC}"
             echo -e "${YELLOW}🔄 Refresh Token: ${GREEN}$refresh_token${NC}"
@@ -347,9 +359,8 @@ EOF
 
 while true; do
     clear
-    echo -e "${BLUE}==========================${NC}"
-    echo -e "${BLUE}   🚀 Pipe Network Menu   ${NC}"
-    echo -e "${BLUE}==========================${NC}"
+    show_header
+    echo -e "${BLUE}${BOLD}================ Pipe NODE MANAGER BY Aashish 💖 =================${NC}"
     echo -e "${YELLOW}1. 🛠️ Install Node${NC}"
     echo -e "${YELLOW}2. ⬆️ Upload File${NC}"
     echo -e "${YELLOW}3. 📄 Show Uploaded File Info${NC}"
@@ -357,7 +368,7 @@ while true; do
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. ❌ Exit${NC}"
-    echo -e "${BLUE}==========================${NC}"
+    echo -e "${BLUE}============================================================================${NC}"
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
     case $choice in
         1) install_node ;;
