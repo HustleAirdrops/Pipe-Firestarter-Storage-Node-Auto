@@ -6,6 +6,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 CTRL_C_COUNT=0
+IN_MENU=0
 
 trap 'handle_ctrl_c' SIGINT
 
@@ -28,6 +29,10 @@ show_header() {
 
 handle_ctrl_c() {
     ((CTRL_C_COUNT++))
+    if [ $IN_MENU -eq 1 ]; then
+        echo -e "\n${RED}🚨 Exiting...${NC}"
+        exit 0
+    fi
     if [ $CTRL_C_COUNT -ge 2 ]; then
         echo -e "\n${RED}🚨 Multiple Ctrl+C detected. Exiting...${NC}"
         exit 0
@@ -374,8 +379,10 @@ while true; do
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
+    IN_MENU=1
     stty echo
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
+    IN_MENU=0
     case $choice in
         1) install_node ;;
         2) upload_file ;;
