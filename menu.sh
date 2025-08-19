@@ -9,7 +9,7 @@ CTRL_C_COUNT=0
 IN_MENU=0
 
 trap 'handle_ctrl_c' SIGINT
-#AAAAAAAAAAAAA
+
 show_header() {
     clear
     echo -e "${BLUE}${BOLD}"
@@ -60,7 +60,7 @@ setup_venv() {
     fi
     source "$VENV_DIR/bin/activate"
     pip install --upgrade pip
-    pip install yt-dlp requests
+    pip install yt-dlp requests moviepy
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to install packages in venv!${NC}"
         deactivate
@@ -97,11 +97,15 @@ install_node() {
         echo -e "${BLUE}🔄 Updating system and installing dependencies...${NC}"
         sudo apt update && sudo apt upgrade -y
         sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv ffmpeg
-
         if ! command -v ffmpeg >/dev/null 2>&1; then
-            echo -e "${RED}❌ ffmpeg is not installed. Please ensure it is installed and accessible.${NC}"
-            return_to_menu
-            return
+            echo -e "${YELLOW}⚠️ ffmpeg not found. Attempting to install...${NC}"
+            sudo apt install -y ffmpeg
+            if ! command -v ffmpeg >/dev/null 2>&1; then
+                echo -e "${RED}❌ Failed to install ffmpeg. Please install it manually with 'sudo apt install ffmpeg'.${NC}"
+                return_to_menu
+                return
+            fi
+            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
         fi
 
         setup_venv
@@ -208,10 +212,10 @@ upload_file() {
         fi
     fi
     source "$VENV_DIR/bin/activate"
-    if ! pip show yt-dlp >/dev/null 2>&1 || ! pip show requests >/dev/null 2>&1; then
+    if ! pip show yt-dlp >/dev/null 2>&1 || ! pip show requests >/dev/null 2>&1 || ! pip show moviepy >/dev/null 2>&1; then
         echo -e "${YELLOW}🛠️ Installing missing packages...${NC}"
         pip install --upgrade pip
-        pip install yt-dlp requests
+        pip install yt-dlp requests moviepy
         if [ $? -ne 0 ]; then
             echo -e "${RED}❌ Failed to install packages. Please check your internet connection or pip configuration.${NC}"
             deactivate
@@ -222,8 +226,14 @@ upload_file() {
     fi
 
     if ! command -v ffmpeg >/dev/null 2>&1; then
-        echo -e "${RED}❌ ffmpeg is not installed. Please install ffmpeg to enable video concatenation for YouTube, Pixabay, and Pexels downloads.${NC}"
-        echo -e "${YELLOW}⚠️ You can still use manual upload if ffmpeg is not installed.${NC}"
+        echo -e "${YELLOW}⚠️ ffmpeg is not installed. Attempting to install...${NC}"
+        sudo apt update
+        sudo apt install -y ffmpeg
+        if ! command -v ffmpeg >/dev/null 2>&1; then
+            echo -e "${RED}❌ ffmpeg installation failed. Falling back to moviepy for video concatenation. Install ffmpeg manually with 'sudo apt install ffmpeg' for faster processing.${NC}"
+        else
+            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
+        fi
     fi
 
     while true; do
@@ -469,6 +479,7 @@ import random
 import string
 import subprocess
 import shutil
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
@@ -486,6 +497,25 @@ def draw_progress_bar(progress, total, width=50):
 
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
+def concatenate_with_moviepy(files, output_file):
+    try:
+        clips = []
+        for fn in files:
+            if os.path.exists(fn) and os.path.getsize(fn) > 0:
+                clip = VideoFileClip(fn)
+                clips.append(clip)
+        if not clips:
+            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            return False
+        final_clip = concatenate_videoclips(clips, method="compose")
+        final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac")
+        for clip in clips:
+            clip.close()
+        return os.path.exists(output_file) and os.path.getsize(output_file) > 0
+    except Exception as e:
+        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        return False
 
 def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1024*1024, min_filesize=50*1024*1024):
     ydl_opts = {
@@ -544,24 +574,28 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
-            if not check_ffmpeg():
-                print("\033[0;31m❌ ffmpeg is not installed. Cannot concatenate multiple videos. Using first video only.\033[0m")
-                os.rename(downloaded_files[0], output_file)
-                for fn in downloaded_files[1:]:
-                    os.remove(fn)
-            else:
+            success = False
+            if check_ffmpeg():
+                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
                 result = subprocess.run(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', output_file], capture_output=True, text=True)
-                if result.returncode != 0:
-                    print(f"\033[0;31m❌ Failed to concatenate videos: {result.stderr}\033[0m")
+                if result.returncode == 0:
+                    success = os.path.exists(output_file) and os.path.getsize(output_file) > 0
+                else:
+                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                if os.path.exists('list.txt'):
                     os.remove('list.txt')
-                    for fn in downloaded_files:
-                        os.remove(fn)
-                    return
-                os.remove('list.txt')
-                for fn in downloaded_files:
+            if not success:
+                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                success = concatenate_with_moviepy(downloaded_files, output_file)
+            if not success:
+                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                os.rename(downloaded_files[0], output_file)
+                downloaded_files = downloaded_files[1:]
+            for fn in downloaded_files:
+                if os.path.exists(fn):
                     os.remove(fn)
 
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
@@ -605,6 +639,7 @@ import random
 import string
 import subprocess
 import shutil
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
@@ -622,6 +657,25 @@ def draw_progress_bar(progress, total, width=50):
 
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
+def concatenate_with_moviepy(files, output_file):
+    try:
+        clips = []
+        for fn in files:
+            if os.path.exists(fn) and os.path.getsize(fn) > 0:
+                clip = VideoFileClip(fn)
+                clips.append(clip)
+        if not clips:
+            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            return False
+        final_clip = concatenate_videoclips(clips, method="compose")
+        final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac")
+        for clip in clips:
+            clip.close()
+        return os.path.exists(output_file) and os.path.getsize(output_file) > 0
+    except Exception as e:
+        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        return False
 
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pixabay_api_key')
@@ -692,24 +746,28 @@ def download_videos(query, output_file, target_size_mb=1000):
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
-            if not check_ffmpeg():
-                print("\033[0;31m❌ ffmpeg is not installed. Cannot concatenate multiple videos. Using first video only.\033[0m")
-                os.rename(downloaded_files[0], output_file)
-                for fn in downloaded_files[1:]:
-                    os.remove(fn)
-            else:
+            success = False
+            if check_ffmpeg():
+                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
                 result = subprocess.run(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', output_file], capture_output=True, text=True)
-                if result.returncode != 0:
-                    print(f"\033[0;31m❌ Failed to concatenate videos: {result.stderr}\033[0m")
+                if result.returncode == 0:
+                    success = os.path.exists(output_file) and os.path.getsize(output_file) > 0
+                else:
+                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                if os.path.exists('list.txt'):
                     os.remove('list.txt')
-                    for fn in downloaded_files:
-                        os.remove(fn)
-                    return
-                os.remove('list.txt')
-                for fn in downloaded_files:
+            if not success:
+                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                success = concatenate_with_moviepy(downloaded_files, output_file)
+            if not success:
+                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                os.rename(downloaded_files[0], output_file)
+                downloaded_files = downloaded_files[1:]
+            for fn in downloaded_files:
+                if os.path.exists(fn):
                     os.remove(fn)
 
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
@@ -741,6 +799,7 @@ import random
 import string
 import subprocess
 import shutil
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
@@ -758,6 +817,25 @@ def draw_progress_bar(progress, total, width=50):
 
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
+def concatenate_with_moviepy(files, output_file):
+    try:
+        clips = []
+        for fn in files:
+            if os.path.exists(fn) and os.path.getsize(fn) > 0:
+                clip = VideoFileClip(fn)
+                clips.append(clip)
+        if not clips:
+            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            return False
+        final_clip = concatenate_videoclips(clips, method="compose")
+        final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac")
+        for clip in clips:
+            clip.close()
+        return os.path.exists(output_file) and os.path.getsize(output_file) > 0
+    except Exception as e:
+        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        return False
 
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pexels_api_key')
@@ -834,24 +912,28 @@ def download_videos(query, output_file, target_size_mb=1000):
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
-            if not check_ffmpeg():
-                print("\033[0;31m❌ ffmpeg is not installed. Cannot concatenate multiple videos. Using first video only.\033[0m")
-                os.rename(downloaded_files[0], output_file)
-                for fn in downloaded_files[1:]:
-                    os.remove(fn)
-            else:
+            success = False
+            if check_ffmpeg():
+                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
                 result = subprocess.run(['ffmpeg', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', output_file], capture_output=True, text=True)
-                if result.returncode != 0:
-                    print(f"\033[0;31m❌ Failed to concatenate videos: {result.stderr}\033[0m")
+                if result.returncode == 0:
+                    success = os.path.exists(output_file) and os.path.getsize(output_file) > 0
+                else:
+                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                if os.path.exists('list.txt'):
                     os.remove('list.txt')
-                    for fn in downloaded_files:
-                        os.remove(fn)
-                    return
-                os.remove('list.txt')
-                for fn in downloaded_files:
+            if not success:
+                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                success = concatenate_with_moviepy(downloaded_files, output_file)
+            if not success:
+                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                os.rename(downloaded_files[0], output_file)
+                downloaded_files = downloaded_files[1:]
+            for fn in downloaded_files:
+                if os.path.exists(fn):
                     os.remove(fn)
 
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
