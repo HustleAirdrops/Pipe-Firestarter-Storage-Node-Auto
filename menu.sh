@@ -257,8 +257,6 @@ upload_file() {
                     selected="${videos[$((num-1))]}"
                     output_file="${selected##*/}"
                     echo -e "${GREEN}✅ Selected: $selected${NC}"
-                    # For manual, no download, directly upload, don't delete
-                    ;;
                 else
                     echo -e "${RED}❌ Invalid selection.${NC}"
                     return_to_menu
