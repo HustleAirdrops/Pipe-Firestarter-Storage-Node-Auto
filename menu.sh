@@ -71,7 +71,7 @@ setup_venv() {
 }
 
 setup_pipe_path() {
-    # Optional function to setup pipe path without exiting or throwing errors
+    # Automatically sets up pipe path if needed, no errors or process end
     if [ -f "$HOME/.cargo/bin/pipe" ]; then
         if ! grep -q "export PATH=\$HOME/.cargo/bin:\$PATH" ~/.bashrc; then
             echo 'export PATH=$HOME/.cargo/bin:$PATH' >> ~/.bashrc
@@ -86,7 +86,7 @@ setup_pipe_path() {
         chmod +x $HOME/.cargo/bin/pipe
         echo -e "${GREEN}✅ Ensured pipe is executable.${NC}"
     else
-        echo -e "${YELLOW}⚠️ Pipe binary not found. Please run install_node first.${NC}"
+        echo -e "${YELLOW}⚠️ Pipe binary not found. Installation may be incomplete.${NC}"
     fi
 }
 
@@ -114,8 +114,10 @@ install_node() {
         cargo install --path .
         cd $HOME
 
-        # Call setup_pipe_path to handle path configuration
-        setup_pipe_path
+        # Automatically setup pipe path if not working
+        if ! command -v pipe >/dev/null 2>&1; then
+            setup_pipe_path
+        fi
 
         echo -e "${BLUE}🔍 Verifying Pipe installation...${NC}"
         if ! pipe -h >/dev/null 2>&1; then
@@ -214,6 +216,10 @@ upload_file() {
     deactivate
     if [ -f "$output_file" ]; then
         echo -e "${BLUE}⬆️ Uploading video...${NC}"
+        # Automatically setup path if pipe command fails
+        if ! command -v pipe >/dev/null 2>&1; then
+            setup_pipe_path
+        fi
         upload_output=$(pipe upload-file "./$output_file" "$output_file" 2>&1)
         echo "$upload_output"
         file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
@@ -445,8 +451,7 @@ while true; do
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. 🔥 Swap tokens${NC}"
-    echo -e "${YELLOW}8. 🔧 Setup Pipe Path (if needed)${NC}" # Added new option
-    echo -e "${YELLOW}9. ❌ Exit${NC}"
+    echo -e "${YELLOW}8. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
     stty echo
@@ -460,8 +465,7 @@ while true; do
         5) check_token_usage ;;
         6) show_credentials ;;
         7) swap_tokens ;;
-        8) setup_pipe_path ;; # Added call to new function
-        9) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
+        8) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
         *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
 done
