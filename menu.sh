@@ -759,7 +759,7 @@ while true; do
         2) upload_file ;;
         3) show_file_info ;;
         4) show_referral ;;
-         Asset 5) check_token_usage ;;
+        5) check_token_usage ;;
         6) show_credentials ;;
         7) swap_tokens ;;
         8) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
