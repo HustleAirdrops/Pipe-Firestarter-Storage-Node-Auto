@@ -78,54 +78,69 @@ install_node() {
         echo -e "${BLUE}🔄 Updating system and installing dependencies...${NC}"
         sudo apt update && sudo apt upgrade -y
         sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv
+
         setup_venv
         if [ $? -ne 0 ]; then
             echo -e "${RED}❌ Python environment setup failed. You can still use other menu options, but file upload may not work.${NC}"
         fi
+
         echo -e "${BLUE}🦀 Installing Rust...${NC}"
         curl https://sh.rustup.rs -sSf | sh -s -- -y
         source $HOME/.cargo/env
+
         echo -e "${BLUE}📥 Cloning and installing Pipe...${NC}"
         git clone https://github.com/PipeNetwork/pipe.git $HOME/pipe
         cd $HOME/pipe
         cargo install --path .
         cd $HOME
+
+        echo 'export PATH=$PATH:$HOME/.cargo/bin' >> ~/.bashrc
+        source ~/.bashrc
+
         echo -e "${BLUE}🔍 Verifying Pipe installation...${NC}"
-        pipe -h
-        if [ $? -ne 0 ]; then
+        if ! pipe -h >/dev/null 2>&1; then
             echo -e "${RED}❌ Pipe installation failed!${NC}"
             return_to_menu
             return
         fi
+
         echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
     fi
-    stty echo
-    read -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
+
+    read -r -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
     echo -e "${GREEN}✅ User created. Save these details:${NC}"
     echo "$pipe_output"
+
     solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
     echo -e "${GREEN}🔑 Your Solana Public Key: $solana_pubkey${NC}"
-    echo -e "${BLUE}💾 Your credentials are below. Copy and save them and press Enter to continue:${NC}"
-    cat /home/$USER/.pipe-cli.json
-    read -s
+
+    echo -e "${BLUE}💾 Your credentials are below. Copy and save them, then press Enter to continue:${NC}"
+    cat "/home/$USER/.pipe-cli.json"
+    read -s -p "Press Enter after saving your credentials..."
+
     clear
-    stty echo
-    read -p "$(echo -e ${YELLOW}🔗 Enter a referral code \(or press Enter to use default\): ${NC})" referral_code
+
+    read -r -p "$(echo -e ${YELLOW}🔗 Enter a referral code (or press Enter to use default): ${NC})" referral_code
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
         echo -e "${YELLOW}🔗 Using default referral code: $referral_code${NC}"
     fi
+
     echo -e "${BLUE}✅ Applying referral code...${NC}"
     pipe referral apply "$referral_code"
     pipe referral generate >/dev/null 2>&1
+
     echo -e "${YELLOW}💰 Claim 5 Devnet SOL from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
-    stty echo
-    read -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
+    read -r -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
+
     if [ "$confirmation" = "yes" ]; then
+        echo -e "${BLUE}⏳ Waiting 10 seconds before swapping...${NC}"
+        sleep 10
         echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
-        pipe swap-sol-for-pipe 2
+        swap_output=$(pipe swap-sol-for-pipe 2 2>&1)
+        echo "$swap_output"
     else
         echo -e "${RED}❌ SOL not claimed. Returning to menu.${NC}"
         return_to_menu
@@ -133,6 +148,7 @@ install_node() {
     fi
     return_to_menu
 }
+
 
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
@@ -261,6 +277,27 @@ show_referral() {
     return_to_menu
 }
 
+swap_tokens() {
+    echo "-----------------------------------"
+    echo "🔥 PIPE Swapping Menu 🔥"
+    echo "-----------------------------------"
+    read -p "Enter amount to swap: " AMOUNT
+
+    if [[ -z "$AMOUNT" ]]; then
+        echo "❌ Amount cannot be empty!"
+        return
+    fi
+
+    echo "✅ Swapping $AMOUNT PIPE tokens..."
+    pipe swap-sol-for-pipe "$AMOUNT"
+
+    if [[ $? -eq 0 ]]; then
+        echo "🎉 Successfully swap $AMOUNT PIPE!"
+    else
+        echo "⚠️ Error while swapping tokens."
+    fi
+}
+
 check_token_usage() {
     echo -e "${BLUE}📈 Checking token usage...${NC}"
     pipe token-usage
@@ -377,7 +414,8 @@ while true; do
     echo -e "${YELLOW}4. 🔗 Show Referral Stats and Code${NC}"
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
-    echo -e "${YELLOW}7. ❌ Exit${NC}"
+    echo -e "${YELLOW}7. 🔥 Swap tokens${NC}"
+    echo -e "${YELLOW}8. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
     stty echo
@@ -390,7 +428,8 @@ while true; do
         4) show_referral ;;
         5) check_token_usage ;;
         6) show_credentials ;;
-        7) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
+        7) swap_tokens ;;
+        8) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
         *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
 done
