@@ -356,11 +356,11 @@ if __name__ == "__main__":
     else:
         print("\033[0;31mPlease provide a search query and output filename.\033[0m")
 EOF
-
+======
 while true; do
     clear
     show_header
-    echo -e "${BLUE}${BOLD}================ Pipe NODE MANAGER BY Aashish 💖 =================${NC}"
+    echo -e "${BLUE}${BOLD}======================= Pipe NODE MANAGER BY Aashish 💖 =======================${NC}"
     echo -e "${YELLOW}1. 🛠️ Install Node${NC}"
     echo -e "${YELLOW}2. ⬆️ Upload File${NC}"
     echo -e "${YELLOW}3. 📄 Show Uploaded File Info${NC}"
@@ -368,7 +368,7 @@ while true; do
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. ❌ Exit${NC}"
-    echo -e "${BLUE}============================================================================${NC}"
+    echo -e "${BLUE}=============================================================================${NC}"
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
     case $choice in
         1) install_node ;;
