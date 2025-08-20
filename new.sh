@@ -8,27 +8,10 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 CTRL_C_COUNT=0
+SOLANA_PUBKEY=""
 
 # Trap Ctrl+C
 trap 'handle_ctrl_c' SIGINT
-
-# Display header
-show_header() {
-    clear
-    echo -e "${BLUE}${BOLD}"
-    echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│ ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗ │"
-    echo "│ ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝ │"
-    echo "│ ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░ │"
-    echo "│ ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗ │"
-    echo "│ ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝ │"
-    echo "│ ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░ │"
-    echo "└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
-    echo -e "${YELLOW} 🚀 Pipe Node Manager by Aashish 🚀${NC}"
-    echo -e "${YELLOW} GitHub: https://github.com/HustleAirdrops${NC}"
-    echo -e "${YELLOW} Telegram: https://t.me/Hustle_Airdrops${NC}"
-    echo -e "${GREEN}===============================================================================${NC}"
-}
 
 # Handle Ctrl+C
 handle_ctrl_c() {
@@ -45,6 +28,7 @@ handle_ctrl_c() {
 
 # Cleanup temporary files
 cleanup() {
+    echo -e "${BLUE}🧹 Cleaning up temporary files...${NC}"
     rm -f solana_airdrop.py tmp.json list.txt video_*.mp4 pix_*.mp4 pex_*.mp4 2>/dev/null
 }
 
@@ -74,7 +58,8 @@ setup_venv() {
     pip install --upgrade pip
     for package in yt-dlp requests moviepy; do
         if ! pip show $package >/dev/null 2>&1; then
-            echo -e "${YELLOW}📦 Installing $package...${NCTRY_COUNT=0
+            echo -e "${YELLOW}📦 Installing $package...${NC}"
+            RETRY_COUNT=0
             MAX_RETRIES=3
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
                 pip install $package
@@ -135,9 +120,18 @@ install_node() {
             fi
             echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
         fi
+        if ! command -v jq >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ jq not found. Attempting to install...${NC}"
+            sudo apt install -y jq
+            if ! command -v jq >/dev/null 2>&1; then
+                echo -e "${RED}❌ Failed to install jq. Please install it manually with 'sudo apt install jq'.${NC}"
+                exit 1
+            fi
+            echo -e "${GREEN}✅ jq installed successfully.${NC}"
+        fi
         setup_venv
         if [ $? -ne 0 ]; then
-            echo -e "${RED}� channels failed. Exiting.${NC}"
+            echo -e "${RED}❌ Virtual environment setup failed. Exiting.${NC}"
             exit 1
         fi
         echo -e "${BLUE}🦀 Installing Rust...${NC}"
@@ -175,14 +169,14 @@ create_user_and_setup() {
     fi
     echo -e "${GREEN}✅ User created. Details:${NC}"
     echo "$pipe_output"
-    solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
-    if [ -z "$solana_pubkey" ]; then
-        echo -e "${RED}❌ Failed to extract Solana Public Key.${NC}"
+    SOLANA_PUBKEY=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
+    if [ -z "$SOLANA_PUBKEY" ]; then
+        echo -e "${RED}❌ Failedས  Failed to extract Solana Public Key.${NC}"
         exit 1
     fi
-    echo -e "${GREEN}🔑 Your Solana Public Key: $solana_pubkey${NC}"
+    echo -e "${GREEN}🔑 Your Solana Public Key: $SOLANA_PUBKEY${NC}"
     if [ -f "$HOME/.pipe-cli.json" ]; then
-        jq --arg sp "$solana_pubkey" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json
+        jq --arg sp "$SOLANA_PUBKEY" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json
         if [ $? -eq 0 ]; then
             mv tmp.json "$HOME/.pipe-cli.json"
             echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-cli.json${NC}"
@@ -193,7 +187,7 @@ create_user_and_setup() {
         echo -e "${RED}❌ ~/.pipe-cli.json not found.${NC}"
         exit 1
     fi
-    echo "$solana_pubkey" > "$HOME/solana_pubkey_backup.txt"
+    echo "$SOLANA_PUBKEY" > "$HOME/solana_pubkey_backup.txt"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Solana Public Key backed up to ~/solana_pubkey_backup.txt${NC}"
     else
@@ -267,6 +261,14 @@ def main(pubkey: str):
         return False, str(e)
     except Exception as e:
         raise RuntimeError("Network error: " + str(e))
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        success, message = main(sys.argv[1])
+        print(message)
+    else:
+        print("Please provide a Solana public key.")
 EOF
     chmod +x solana_airdrop.py
     retries=0
@@ -274,13 +276,12 @@ EOF
     while [ $retries -lt $max_retries ]; do
         attempt=$((retries+1))
         echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt ${attempt}/${max_retries})...${NC}"
-
-        result=$(python3 solana_airdrop.py "$solana_pubkey" 2>&1)
+        result=$(python3 solana_airdrop.py "$SOLANA_PUBKEY" 2>&1)
         success=$(echo "$result" | grep -o "✅ Airdrop confirmed" | wc -l)
         message=$(echo "$result" | tail -n 1)
         if [ $success -eq 1 ]; then
             echo -e "${GREEN}✅ Airdrop successful. Tx: $message${NC}"
-            rm solana_airdrop.py
+            rm -f solana_airdrop.py
             return 0
         else
             echo -e "${RED}❌ Airdrop failed: $message${NC}"
@@ -288,9 +289,9 @@ EOF
             sleep 5
         fi
     done
-    rm solana_airdrop.py
+    rm -f solana_airdrop.py
     echo -e "${RED}❌ Auto claim failed after $max_retries attempts.${NC}"
-    echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
+    echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $SOLANA_PUBKEY${NC}"
     read -r -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
     if [ "$confirmation" != "yes" ]; then
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
@@ -474,7 +475,7 @@ gather_and_send_details() {
     echo -e "${GREEN}✅ Details sent to Telegram!${NC}"
 }
 
-# Video downloader scripts (unchanged from original)
+# Video downloader scripts (unchanged)
 cat << 'EOF' > video_downloader.py
 import yt_dlp
 import os
@@ -947,7 +948,6 @@ if __name__ == "__main__":
 EOF
 
 # Main execution
-show_header
 install_node
 create_user_and_setup
 auto_claim_faucet
