@@ -8,27 +8,10 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 CTRL_C_COUNT=0
+SOLANA_PUBKEY=""
 
 # Trap Ctrl+C
 trap 'handle_ctrl_c' SIGINT
-
-# Display header
-show_header() {
-    clear
-    echo -e "${BLUE}${BOLD}"
-    echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│ ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗ │"
-    echo "│ ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝ │"
-    echo "│ ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░ │"
-    echo "│ ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗ │"
-    echo "│ ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝ │"
-    echo "│ ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░ │"
-    echo "└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
-    echo -e "${YELLOW} 🚀 Pipe Node Manager by Aashish 🚀${NC}"
-    echo -e "${YELLOW} GitHub: https://github.com/HustleAirdrops${NC}"
-    echo -e "${YELLOW} Telegram: https://t.me/Hustle_Airdrops${NC}"
-    echo -e "${GREEN}===============================================================================${NC}"
-}
 
 # Handle Ctrl+C
 handle_ctrl_c() {
@@ -45,6 +28,7 @@ handle_ctrl_c() {
 
 # Cleanup temporary files
 cleanup() {
+    echo -e "${BLUE}🧹 Cleaning up temporary files...${NC}"
     rm -f solana_airdrop.py tmp.json list.txt video_*.mp4 pix_*.mp4 pex_*.mp4 2>/dev/null
 }
 
@@ -52,7 +36,7 @@ cleanup() {
 setup_venv() {
     VENV_DIR="$HOME/pipe_venv"
     echo -e "${BLUE}🛠️ Setting up Python virtual environment at $VENV_DIR...${NC}"
-   
+    
     # Ensure python3 and pip are available
     if ! command -v python3 >/dev/null 2>&1 || ! command -v pip3 >/dev/null 2>&1; then
         echo -e "${BLUE}📦 Installing Python3 and pip...${NC}"
@@ -62,6 +46,7 @@ setup_venv() {
             exit 1
         fi
     fi
+
     if [ ! -d "$VENV_DIR" ]; then
         python3 -m venv "$VENV_DIR"
         if [ $? -ne 0 ]; then
@@ -72,12 +57,12 @@ setup_venv() {
     source "$VENV_DIR/bin/activate"
     pip install --upgrade pip
     for package in yt-dlp requests moviepy; do
-        if ! pip show $package >/dev/null 2>&1; then
+        if ! pip show "$package" >/dev/null 2>&1; then
             echo -e "${YELLOW}📦 Installing $package...${NC}"
             RETRY_COUNT=0
             MAX_RETRIES=3
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-                pip install $package
+                pip install "$package"
                 if [ $? -eq 0 ]; then
                     break
                 fi
@@ -106,10 +91,10 @@ setup_pipe_path() {
         export PATH=$HOME/.cargo/bin:$PATH
         echo -e "${GREEN}✅ Updated PATH with pipe location.${NC}"
         if [ -f "$HOME/.cargo/env" ]; then
-            source $HOME/.cargo/env
+            source "$HOME/.cargo/env"
             echo -e "${GREEN}✅ Reloaded cargo environment.${NC}"
         fi
-        chmod +x $HOME/.cargo/bin/pipe
+        chmod +x "$HOME/.cargo/bin/pipe"
         echo -e "${GREEN}✅ Ensured pipe is executable.${NC}"
     else
         echo -e "${YELLOW}⚠️ Pipe binary not found. Installation may be incomplete.${NC}"
@@ -126,14 +111,27 @@ install_node() {
         echo -e "${BLUE}🔄 Updating system and installing dependencies...${NC}"
         sudo apt update && sudo apt upgrade -y
         sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-pip python3-venv ffmpeg
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to install dependencies!${NC}"
+            exit 1
+        fi
         if ! command -v ffmpeg >/dev/null 2>&1; then
             echo -e "${YELLOW}⚠️ ffmpeg not found. Attempting to install...${NC}"
             sudo apt install -y ffmpeg
-            if ! command -v ffmpeg >/dev/null 2>&1; then
+            if [ $? -ne 0 ]; then
                 echo -e "${RED}❌ Failed to install ffmpeg. Please install it manually with 'sudo apt install ffmpeg'.${NC}"
                 exit 1
             fi
             echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
+        fi
+        if ! command -v jq >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ jq not found. Attempting to install...${NC}"
+            sudo apt install -y jq
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}❌ Failed to install jq. Please install it manually with 'sudo apt install jq'.${NC}"
+                exit 1
+            fi
+            echo -e "${GREEN}✅ jq installed successfully.${NC}"
         fi
         setup_venv
         if [ $? -ne 0 ]; then
@@ -142,12 +140,24 @@ install_node() {
         fi
         echo -e "${BLUE}🦀 Installing Rust...${NC}"
         curl https://sh.rustup.rs -sSf | sh -s -- -y
-        source $HOME/.cargo/env
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to install Rust!${NC}"
+            exit 1
+        fi
+        source "$HOME/.cargo/env"
         echo -e "${BLUE}📥 Cloning and installing Pipe...${NC}"
-        git clone https://github.com/PipeNetwork/pipe.git $HOME/pipe
-        cd $HOME/pipe
+        git clone https://github.com/PipeNetwork/pipe.git "$HOME/pipe"
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to clone Pipe repository!${NC}"
+            exit 1
+        fi
+        cd "$HOME/pipe"
         cargo install --path .
-        cd $HOME
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to install Pipe!${NC}"
+            exit 1
+        fi
+        cd "$HOME"
         if ! command -v pipe >/dev/null 2>&1; then
             setup_pipe_path
         fi
@@ -162,7 +172,7 @@ install_node() {
 
 # Create user and setup referral
 create_user_and_setup() {
-    read -r -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
+    read -r -p "${YELLOW}👤 Enter your desired username: ${NC}" username
     if [ -z "$username" ]; then
         echo -e "${RED}❌ Username cannot be empty. Exiting.${NC}"
         exit 1
@@ -175,14 +185,14 @@ create_user_and_setup() {
     fi
     echo -e "${GREEN}✅ User created. Details:${NC}"
     echo "$pipe_output"
-    solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
-    if [ -z "$solana_pubkey" ]; then
+    SOLANA_PUBKEY=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
+    if [ -z "$SOLANA_PUBKEY" ]; then
         echo -e "${RED}❌ Failed to extract Solana Public Key.${NC}"
         exit 1
     fi
-    echo -e "${GREEN}🔑 Your Solana Public Key: $solana_pubkey${NC}"
+    echo -e "${GREEN}🔑 Your Solana Public Key: $SOLANA_PUBKEY${NC}"
     if [ -f "$HOME/.pipe-cli.json" ]; then
-        jq --arg sp "$solana_pubkey" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json
+        jq --arg sp "$SOLANA_PUBKEY" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json
         if [ $? -eq 0 ]; then
             mv tmp.json "$HOME/.pipe-cli.json"
             echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-cli.json${NC}"
@@ -193,7 +203,7 @@ create_user_and_setup() {
         echo -e "${RED}❌ ~/.pipe-cli.json not found.${NC}"
         exit 1
     fi
-    echo "$solana_pubkey" > "$HOME/solana_pubkey_backup.txt"
+    echo "$SOLANA_PUBKEY" > "$HOME/solana_pubkey_backup.txt"
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Solana Public Key backed up to ~/solana_pubkey_backup.txt${NC}"
     else
@@ -211,9 +221,11 @@ auto_claim_faucet() {
     cat << 'EOF' > solana_airdrop.py
 #!/usr/bin/env python3
 import requests, time, uuid
+
 RPC_URL = "https://api.devnet.solana.com"
 LAMPORTS_PER_SOL = 1_000_000_000
 DEFAULT_SOL = 5
+
 def rpc(method: str, params):
     payload = {
         "jsonrpc": "2.0",
@@ -230,9 +242,11 @@ def rpc(method: str, params):
         return data["result"]
     except requests.RequestException as e:
         raise RuntimeError("Network error: " + str(e))
+
 def request_airdrop(pubkey: str, sol: float = DEFAULT_SOL) -> str:
     lamports = int(sol * LAMPORTS_PER_SOL)
     return rpc("requestAirdrop", [pubkey, lamports])
+
 def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
     start = time.time()
     while time.time() - start < timeout_s:
@@ -245,6 +259,7 @@ def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
             pass
         time.sleep(1.2)
     return False
+
 def main(pubkey: str):
     try:
         print(f"Requesting airdrop of {DEFAULT_SOL} SOL to {pubkey} ...")
@@ -262,13 +277,14 @@ def main(pubkey: str):
         return False, str(e)
     except Exception as e:
         raise RuntimeError("Network error: " + str(e))
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         success, message = main(sys.argv[1])
         print(message)
     else:
-        print("❌ Please provide a Solana public key.")
+        print("Please provide a Solana public key.")
 EOF
     chmod +x solana_airdrop.py
     retries=0
@@ -276,12 +292,12 @@ EOF
     while [ $retries -lt $max_retries ]; do
         attempt=$((retries+1))
         echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt ${attempt}/${max_retries})...${NC}"
-        result=$(python3 solana_airdrop.py "$solana_pubkey" 2>&1)
+        result=$(python3 solana_airdrop.py "$SOLANA_PUBKEY" 2>&1)
         success=$(echo "$result" | grep -o "✅ Airdrop confirmed" | wc -l)
         message=$(echo "$result" | tail -n 1)
         if [ $success -eq 1 ]; then
             echo -e "${GREEN}✅ Airdrop successful. Tx: $message${NC}"
-            rm solana_airdrop.py
+            rm -f solana_airdrop.py
             return 0
         else
             echo -e "${RED}❌ Airdrop failed: $message${NC}"
@@ -289,10 +305,10 @@ EOF
             sleep 5
         fi
     done
-    rm solana_airdrop.py
+    rm -f solana_airdrop.py
     echo -e "${RED}❌ Auto claim failed after $max_retries attempts.${NC}"
-    echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
-    read -r -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
+    echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $SOLANA_PUBKEY${NC}"
+    read -r -p "${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC}" confirmation
     if [ "$confirmation" != "yes" ]; then
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
         cleanup
@@ -328,7 +344,7 @@ upload_videos() {
     source "$VENV_DIR/bin/activate"
     echo "pexels: iur1f5KGwvSIR1xr8I1t3KR3NP88wFXeCyV12ibHnioNXQYTy95KhE69" > "$HOME/.pexels_api_key"
     echo "51848865-07253475f9fc0309b02c38a39" > "$HOME/.pixabay_api_key"
-    read -p "$(echo -e ${YELLOW}🔢 Enter number of uploads (each ~1GB): ${NC})" num_uploads
+    read -p "${YELLOW}🔢 Enter number of uploads (each ~1GB): ${NC}" num_uploads
     if ! [[ $num_uploads =~ ^[0-9]+$ ]] || [ $num_uploads -lt 1 ]; then
         echo -e "${RED}❌ Invalid number of uploads. Exiting.${NC}"
         deactivate
@@ -407,7 +423,7 @@ upload_videos() {
 
 # Gather and send details to Telegram
 gather_and_send_details() {
-    read -p "$(echo -e ${YELLOW}📛 Enter name for details: ${NC})" details_name
+    read -p "${YELLOW}📛 Enter name for details: ${NC}" details_name
     if [ -z "$details_name" ]; then
         echo -e "${RED}❌ Name cannot be empty. Exiting.${NC}"
         cleanup
@@ -445,29 +461,29 @@ gather_and_send_details() {
             exit 1
         fi
     fi
-    curl -s -F chat_id="$chat_id" -F text="📂 Details for '$details_name' 🚀" https://api.telegram.org/bot$bot_token/sendMessage >/dev/null
+    curl -s -F chat_id="$chat_id" -F text="📂 Details for '$details_name' 🚀" "https://api.telegram.org/bot$bot_token/sendMessage" >/dev/null
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to send initial message to Telegram.${NC}"
     fi
-    curl -s -F chat_id="$chat_id" -F document=@"$details_file" https://api.telegram.org/bot$bot_token/sendDocument >/dev/null
+    curl -s -F chat_id="$chat_id" -F document=@"$details_file" "https://api.telegram.org/bot$bot_token/sendDocument" >/dev/null
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to send details file to Telegram.${NC}"
     fi
     if [ -f "file_details.json" ]; then
-        curl -s -F chat_id="$chat_id" -F document=@"file_details.json" https://api.telegram.org/bot$bot_token/sendDocument >/dev/null
+        curl -s -F chat_id="$chat_id" -F document=@"file_details.json" "https://api.telegram.org/bot$bot_token/sendDocument" >/dev/null
         if [ $? -ne 0 ]; then
             echo -e "${RED}❌ Failed to send file_details.json to Telegram.${NC}"
         fi
     fi
     for log in upload_logs/upload_*.log; do
         if [ -f "$log" ]; then
-            curl -s -F chat_id="$chat_id" -F document=@"$log" https://api.telegram.org/bot$bot_token/sendDocument >/dev/null
+            curl -s -F chat_id="$chat_id" -F document=@"$log" "https://api.telegram.org/bot$bot_token/sendDocument" >/dev/null
             if [ $? -ne 0 ]; then
                 echo -e "${RED}❌ Failed to send log $log to Telegram.${NC}"
             fi
         fi
     done
-    curl -s -F chat_id="$chat_id" -F text="✅ All details sent for '$details_name'! 🎉 Check above for credentials, Solana key, and upload logs. 🌟" https://api.telegram.org/bot$bot_token/sendMessage >/dev/null
+    curl -s -F chat_id="$chat_id" -F text="✅ All details sent for '$details_name'! 🎉 Check above for credentials, Solana key, and upload logs. 🌟" "https://api.telegram.org/bot$bot_token/sendMessage" >/dev/null
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Failed to send final message to Telegram.${NC}"
     fi
@@ -475,7 +491,7 @@ gather_and_send_details() {
     echo -e "${GREEN}✅ Details sent to Telegram!${NC}"
 }
 
-# Video downloader scripts
+# Video downloader scripts (unchanged)
 cat << 'EOF' > video_downloader.py
 import yt_dlp
 import os
@@ -948,7 +964,6 @@ if __name__ == "__main__":
 EOF
 
 # Main execution
-show_header
 install_node
 create_user_and_setup
 auto_claim_faucet
