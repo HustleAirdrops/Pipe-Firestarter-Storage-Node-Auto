@@ -231,7 +231,7 @@ def rpc(method: str, params):
             raise RuntimeError(f"RPC error: {data['error']}")
         return data["result"]
     except requests.RequestException as e:
-        raise RuntimeError(f"Network error: {str(e)}")
+        raise RuntimeError("Network error: " + str(e))
 
 def request_airdrop(pubkey: str, sol: float = DEFAULT_SOL) -> str:
     lamports = int(sol * LAMPORTS_PER_SOL)
@@ -567,7 +567,7 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
                     eta = (total_size - total_downloaded) / (speed * 1024*1024) if speed > 0 else 0
                     print(f"\033[0;32m✅ Overall Progress: {draw_progress_bar(total_downloaded, total_size)} "
                           f"({format_size(total_downloaded)}/{format_size(total_size)}) "
-                          f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m")
+                          f"(Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m")
         if not downloaded_files:
             print("\033[0;31m❌ No videos found close to 1GB.\033[0m")
             return
