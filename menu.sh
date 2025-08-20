@@ -183,27 +183,122 @@ install_node() {
     echo -e "${BLUE}✅ Applying referral code...${NC}"
     pipe referral apply "$referral_code" || echo -e "${RED}❌ Failed to apply referral code.${NC}"
     pipe referral generate >/dev/null 2>&1 || echo -e "${RED}❌ Failed to generate referral code.${NC}"
+}
 
-    echo -e "${YELLOW}💰 Claim 5 Devnet SOL from https://faucet.solana.com/ using your Solana Public Key: $solana_pubkey${NC}"
-    read -r -p "$(echo -e ${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC})" confirmation
 
-    if [ "$confirmation" = "yes" ]; then
-        echo -e "${BLUE}⏳ Waiting 10 seconds before swapping...${NC}"
-        sleep 10
-        echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
-        swap_output=$(pipe swap-sol-for-pipe 2 2>&1)
-        if [ $? -eq 0 ]; then
-            echo "$swap_output"
+auto_claim_faucet() {
+    cat << 'EOF' > solana_airdrop.py
+#!/usr/bin/env python3
+import requests, time, uuid
+
+RPC_URL = "https://api.devnet.solana.com"
+LAMPORTS_PER_SOL = 1_000_000_000
+DEFAULT_SOL = 5
+
+def rpc(method: str, params):
+    payload = {
+        "jsonrpc": "2.0",
+        "id": str(uuid.uuid4()),
+        "method": method,
+        "params": params
+    }
+    try:
+        r = requests.post(RPC_URL, json=payload, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        if "error" in data:
+            raise RuntimeError(f"RPC error: {data['error']}")
+        return data["result"]
+    except requests.RequestException as e:
+        raise RuntimeError("Network error: " + str(e))
+
+def request_airdrop(pubkey: str, sol: float = DEFAULT_SOL) -> str:
+    lamports = int(sol * LAMPORTS_PER_SOL)
+    return rpc("requestAirdrop", [pubkey, lamports])
+
+def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
+    start = time.time()
+    while time.time() - start < timeout_s:
+        try:
+            result = rpc("getSignatureStatuses", [[signature], {"searchTransactionHistory": True}])
+            status = result["value"][0]
+            if status and status.get("confirmationStatus") in ("confirmed", "finalized"):
+                return True
+        except:
+            pass
+        time.sleep(1.2)
+    return False
+
+def main(pubkey: str):
+    try:
+        print(f"Requesting airdrop of {DEFAULT_SOL} SOL to {pubkey} ...")
+        sig = request_airdrop(pubkey, DEFAULT_SOL)
+        print(f"Tx Signature: {sig}")
+        print("Waiting for confirmation...")
+        ok = wait_for_confirmation(sig)
+        if ok:
+            print("✅ Airdrop confirmed.")
+            return True, sig
+        else:
+            print("⏱️ Timed out waiting for confirmation.")
+            return False, "Timed out"
+    except RuntimeError as e:
+        return False, str(e)
+    except Exception as e:
+        raise RuntimeError("Network error: " + str(e))
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        success, message = main(sys.argv[1])
+        print(message)
+    else:
+        print("Please provide a Solana public key.")
+EOF
+    chmod +x solana_airdrop.py
+    retries=0
+    max_retries=3
+    while [ $retries -lt $max_retries ]; do
+        attempt=$((retries+1))
+        echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt ${attempt}/${max_retries})...${NC}"
+        result=$(python3 solana_airdrop.py "$SOLANA_PUBKEY" 2>&1)
+        success=$(echo "$result" | grep -o "✅ Airdrop confirmed" | wc -l)
+        message=$(echo "$result" | tail -n 1)
+        if [ $success -eq 1 ]; then
+            echo -e "${GREEN}✅ Airdrop successful. Tx: $message${NC}"
+            rm -f solana_airdrop.py
+            return 0
         else
-            echo -e "${RED}❌ Failed to swap SOL for PIPE: $swap_output${NC}"
+            echo -e "${RED}❌ Airdrop failed: $message${NC}"
+            retries=$((retries+1))
+            sleep 5
         fi
+    done
+    rm -f solana_airdrop.py
+    echo -e "${RED}❌ Auto claim failed after $max_retries attempts.${NC}"
+    echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $SOLANA_PUBKEY${NC}"
+    read -r -p "${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC}" confirmation
+    if [ "$confirmation" != "yes" ]; then
+        echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
+        cleanup
+        exit 1
+    fi
+}
+
+perform_swap() {
+    echo -e "${BLUE}⏳ Waiting 10 seconds before swapping...${NC}"
+    sleep 10
+    echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
+    swap_output=$(pipe swap-sol-for-pipe 2 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "$swap_output"
+        echo -e "${GREEN}✅ Swap successful.${NC}"
     else
-        echo -e "${RED}❌ SOL not claimed. Returning to menu.${NC}"
-        return_to_menu
-        return
+        echo -e "${RED}❌ Failed to swap SOL for PIPE: $swap_output${NC}"
     fi
     return_to_menu
 }
+
 
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
@@ -1011,7 +1106,11 @@ while true; do
     read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
     IN_MENU=0
     case $choice in
-        1) install_node ;;
+        1) 
+           install_node
+           auto_claim_faucet
+           perform_swap
+           ;;
         2) upload_file ;;
         3) show_file_info ;;
         4) show_referral ;;
