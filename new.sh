@@ -272,7 +272,9 @@ EOF
     retries=0
     max_retries=3
     while [ $retries -lt $max_retries ]; do
-        echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt $((retries+1))/$max_retries)...${NC}"
+        attempt=$((retries+1))
+        echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt ${attempt}/${max_retries})...${NC}"
+
         result=$(python3 solana_airdrop.py "$solana_pubkey" 2>&1)
         success=$(echo "$result" | grep -o "✅ Airdrop confirmed" | wc -l)
         message=$(echo "$result" | tail -n 1)
