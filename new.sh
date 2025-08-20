@@ -266,7 +266,7 @@ def main(pubkey: str):
     except RuntimeError as e:
         return False, str(e)
     except Exception as e:
-        return False, f"Unexpected error: {str(e)}"
+        raise RuntimeError("Network error: " + str(e))
 EOF
     chmod +x solana_airdrop.py
     retries=0
