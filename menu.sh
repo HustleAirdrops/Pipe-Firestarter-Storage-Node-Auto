@@ -142,7 +142,7 @@ install_node() {
         echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
     fi
 
-    read -r -p "$(echo -e ${YELLOW}👤 Enter your desired username: ${NC})" username
+    read -r -p "$(echo -e 👤 Enter your desired username: )" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
     if [ $? -ne 0 ]; then
@@ -173,7 +173,7 @@ install_node() {
 
     clear
 
-    read -p "$(echo -e ${YELLOW}🔗 Enter a referral code \(or press Enter to use my refer code 🥹\): ${NC})" referral_code
+    read -p "$(echo -e 🔗 Enter a referral code \(or press Enter to use my refer code 🥹\):)" referral_code
 
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
@@ -277,7 +277,7 @@ EOF
     rm -f solana_airdrop.py
     echo -e "${RED}❌ Auto claim failed after $max_retries attempts.${NC}"
     echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $SOLANA_PUBKEY${NC}"
-    read -r -p "${YELLOW}✅ Enter 'yes' to confirm you have claimed the SOL: ${NC}" confirmation
+    read -r -p "✅ Enter 'yes' to confirm you have claimed the SOL: " confirmation
     if [ "$confirmation" != "yes" ]; then
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
         cleanup
@@ -347,10 +347,10 @@ upload_file() {
         echo -e "${YELLOW}4. 🗂️ Manual Upload (from home or pipe folder)${NC}"
         echo -e "${YELLOW}5. 🔙 Back to Main Menu${NC}"
         echo -e "${BLUE}=================================================================${NC}"
-        read -p "$(echo -e ${YELLOW}Select an option: ${NC})" subchoice
+        read -p "$(echo -e Select an option: )" subchoice
         case $subchoice in
             1)
-                read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'random full hd'\): ${NC})" query
+                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'random full hd'\): )" query
                 echo -e "${BLUE}📥 Downloading video from YouTube...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
@@ -359,11 +359,11 @@ upload_file() {
             2)
                 API_KEY_FILE="$HOME/.pixabay_api_key"
                 if [ ! -f "$API_KEY_FILE" ]; then
-                    read -p "$(echo -e ${YELLOW}🔑 Enter your Pixabay API key: ${NC})" api_key
+                    read -p "$(echo -e 🔑 Enter your Pixabay API key: )" api_key
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ Pixabay API key saved for future use.${NC}"
                 fi
-                read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'nature'\): ${NC})" query
+                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
@@ -372,11 +372,11 @@ upload_file() {
             3)
                 API_KEY_FILE="$HOME/.pexels_api_key"
                 if [ ! -f "$API_KEY_FILE" ]; then
-                    read -p "$(echo -e ${YELLOW}🔑 Enter your Pexels API key: ${NC})" api_key
+                    read -p "$(echo -e 🔑 Enter your Pexels API key: )" api_key
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ Pexels API key saved for future use.${NC}"
                 fi
-                read -p "$(echo -e ${YELLOW}🔍 Enter a search query for the video \(e.g., 'nature'\): ${NC})" query
+                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pexels...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
@@ -395,7 +395,7 @@ upload_file() {
                     size=$(du -h "${videos[i]}" | cut -f1)
                     echo "$((i+1)). ${videos[i]} ($size)"
                 done
-                read -p "$(echo -e ${YELLOW}Select a number: ${NC})" num
+                read -p "$(echo -e Select a number: )" num
                 if [[ $num =~ ^[0-9]+$ ]] && [ $num -ge 1 ] && [ $num -le ${#videos[@]} ]; then
                     selected="${videos[$((num-1))]}"
                     output_file="${selected##*/}"
@@ -1103,7 +1103,7 @@ while true; do
     echo -e "${YELLOW}8. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
-    read -p "$(echo -e ${YELLOW}Select an option: ${NC})" choice
+    read -p "$(echo -e Select an option: )" choice
     IN_MENU=0
     case $choice in
         1) 
