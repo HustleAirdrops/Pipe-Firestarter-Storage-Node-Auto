@@ -1,4 +1,5 @@
 #!/bin/bash
+# Color codes for terminal output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -7,50 +8,67 @@ NC='\033[0m'
 BOLD='\033[1m'
 CTRL_C_COUNT=0
 IN_MENU=0
+SOLANA_PUBKEY=""
+LOG_DIR="$HOME/pipe_logs"
+LOG_FILE="$LOG_DIR/pipe_manager_$(date +%Y%m%d_%H%M%S).log"
 
-trap 'handle_ctrl_c' SIGINT #AAAAAAAAAAAAAAA
+# Trap Ctrl+C
+trap 'handle_ctrl_c' SIGINT
+
+# Create log directory and file
+mkdir -p "$LOG_DIR"
+exec 1> >(tee -a "$LOG_FILE")
+exec 2>&1
 
 show_header() {
     clear
     echo -e "${BLUE}${BOLD}"
     echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│  ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗  │"
-    echo "│  ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝  │"
-    echo "│  ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░  │"
-    echo "│  ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗  │"
-    echo "│  ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝  │"
-    echo "│  ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░  │"
+    echo "│ ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗ │"
+    echo "│ ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝ │"
+    echo "│ ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░ │"
+    echo "│ ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗ │"
+    echo "│ ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝ │"
+    echo "│ ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░ │"
     echo "└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
-    echo -e "${YELLOW}                  🚀 Pipe Node Manager by Aashish 🚀${NC}"
-    echo -e "${YELLOW}              GitHub: https://github.com/HustleAirdrops${NC}"
-    echo -e "${YELLOW}              Telegram: https://t.me/Hustle_Airdrops${NC}"
+    echo -e "${YELLOW} 🚀 Pipe Node Manager by Aashish 🚀${NC}"
+    echo -e "${YELLOW} GitHub: https://github.com/HustleAirdrops${NC}"
+    echo -e "${YELLOW} Telegram: https://t.me/Hustle_Airdrops${NC}"
     echo -e "${GREEN}===============================================================================${NC}"
 }
 
 handle_ctrl_c() {
     ((CTRL_C_COUNT++))
     if [ $IN_MENU -eq 1 ]; then
-        echo -e "\n${RED}🚨 Exiting...${NC}"
+        echo -e "${RED}🚨 Exiting...${NC}"
         exit 0
     fi
     if [ $CTRL_C_COUNT -ge 2 ]; then
-        echo -e "\n${RED}🚨 Multiple Ctrl+C detected. Exiting...${NC}"
+        echo -e "${RED}🚨 Multiple Ctrl+C detected. Exiting...${NC}"
         exit 0
     fi
-    echo -e "\n${RED}🚨 Ctrl+C detected. Returning to menu...${NC}"
+    echo -e "${RED}🚨 Ctrl+C detected. Returning to menu...${NC}"
     sleep 1
     return_to_menu
 }
 
 return_to_menu() {
     CTRL_C_COUNT=0
-    echo -e "\n${YELLOW}🔁 Press Enter to return to menu...${NC}"
+    echo -e "${YELLOW}🔁 Press Enter to return to menu...${NC}"
     read
 }
 
 setup_venv() {
     VENV_DIR="$HOME/pipe_venv"
     echo -e "${BLUE}🛠️ Setting up Python virtual environment at $VENV_DIR...${NC}"
+    if ! command -v python3 >/dev/null 2>&1 || ! command -v pip3 >/dev/null 2>&1; then
+        echo -e "${BLUE}📦 Installing Python3 and pip...${NC}"
+        sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to install Python3 or pip!${NC}"
+            return 1
+        fi
+    fi
     if [ ! -d "$VENV_DIR" ]; then
         python3 -m venv "$VENV_DIR"
         if [ $? -ne 0 ]; then
@@ -63,15 +81,23 @@ setup_venv() {
     for package in yt-dlp requests moviepy; do
         if ! pip show $package >/dev/null 2>&1; then
             echo -e "${YELLOW}📦 Installing $package...${NC}"
-            pip install $package
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}❌ Failed to install $package!${NC}"
-                deactivate
-                return 1
+            RETRY_COUNT=0
+            MAX_RETRIES=3
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                pip install $package
+                if [ $? -eq 0 ]; then
+                    break
+                fi
+                ((RETRY_COUNT++))
+                echo -e "${YELLOW}⚠️ Retry $RETRY_COUNT/$MAX_RETRIES for $package...${NC}"
+                sleep 5
+            done
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                echo -e "${YELLOW}⚠️ Failed to install $package after $MAX_RETRIES attempts. Continuing without it...${NC}"
             fi
         fi
     done
-    echo -e "${GREEN}✅ All required packages installed successfully in venv!${NC}"
+    echo -e "${GREEN}✅ Python environment setup complete!${NC}"
     deactivate
 }
 
@@ -82,66 +108,87 @@ setup_pipe_path() {
             echo -e "${GREEN}✅ Added pipe path to ~/.bashrc.${NC}"
         fi
         export PATH=$HOME/.cargo/bin:$PATH
-        echo -e "${GREEN}✅ Updated PATH with pipe location.${NC}"
-        if [ -f "$HOME/.cargo/env" ]; then
-            source $HOME/.cargo/env
-            echo -e "${GREEN}✅ Reloaded cargo environment.${NC}"
-        fi
-        chmod +x $HOME/.cargo/bin/pipe
-        echo -e "${GREEN}✅ Ensured pipe is executable.${NC}"
+        source "$HOME/.cargo/env" 2>/dev/null
+        chmod +x "$HOME/.cargo/bin/pipe" 2>/dev/null
+        echo -e "${GREEN}✅ Pipe path configured and executable ensured.${NC}"
     else
-        echo -e "${YELLOW}⚠️ Pipe binary not found. Installation may be incomplete.${NC}"
+        echo -e "${YELLOW}⚠️ Pipe binary not found. Triggering installation...${NC}"
+        install_pipe
     fi
+}
+
+install_pipe() {
+    echo -e "${BLUE}📥 Installing Pipe...${NC}"
+    sudo apt update && sudo apt install -y curl build-essential git wget lz4 jq make gcc libgbm1 pkg-config libssl-dev tar clang bsdmainutils unzip libleveldb-dev libclang-dev ninja-build
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Failed to install dependencies!${NC}"
+        return 1
+    fi
+    echo -e "${BLUE}🦀 Installing Rust...${NC}"
+    curl https://sh.rustup.rs -sSf | sh -s -- -y
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Failed to install Rust!${NC}"
+        return 1
+    fi
+    source "$HOME/.cargo/env"
+    echo -e "${BLUE}📥 Cloning and installing Pipe...${NC}"
+    git clone https://github.com/PipeNetwork/pipe.git "$HOME/pipe" || {
+        echo -e "${RED}❌ Failed to clone Pipe repository!${NC}"
+        return 1
+    }
+    cd "$HOME/pipe"
+    cargo install --path .
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Failed to install Pipe!${NC}"
+        cd "$HOME"
+        return 1
+    }
+    cd "$HOME"
+    setup_pipe_path
+    if ! command -v pipe >/dev/null 2>&1; then
+        echo -e "${RED}❌ Pipe installation failed! Checking PATH: $PATH${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
 }
 
 install_node() {
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
     if command -v pipe >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ Pipe is already installed! Skipping installation.${NC}"
+        echo -e "${GREEN}✅ Pipe is already installed! Checking configuration...${NC}"
     else
-        echo -e "${BLUE}🔄 Updating system and installing dependencies...${NC}"
-        sudo apt update && sudo apt upgrade -y
-        sudo apt install -y curl iptables build-essential git wget lz4 jq make gcc postgresql-client nano automake autoconf tmux htop nvme-cli libgbm1 pkg-config libssl-dev tar clang bsdmainutils ncdu unzip libleveldb-dev libclang-dev ninja-build python3 python3-venv ffmpeg
-        if ! command -v ffmpeg >/dev/null 2>&1; then
-            echo -e "${YELLOW}⚠️ ffmpeg not found. Attempting to install...${NC}"
-            sudo apt install -y ffmpeg
-            if ! command -v ffmpeg >/dev/null 2>&1; then
-                echo -e "${RED}❌ Failed to install ffmpeg. Please install it manually with 'sudo apt install ffmpeg'.${NC}"
-                return_to_menu
-                return
-            fi
-            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
-        fi
-
-        setup_venv
+        install_pipe
         if [ $? -ne 0 ]; then
-            echo -e "${RED}❌ Python environment setup failed. You can still use other menu options, but file upload may not work.${NC}"
-        fi
-
-        echo -e "${BLUE}🦀 Installing Rust...${NC}"
-        curl https://sh.rustup.rs -sSf | sh -s -- -y
-        source $HOME/.cargo/env
-
-        echo -e "${BLUE}📥 Cloning and installing Pipe...${NC}"
-        git clone https://github.com/PipeNetwork/pipe.git $HOME/pipe
-        cd $HOME/pipe
-        cargo install --path .
-        cd $HOME
-
-        if ! command -v pipe >/dev/null 2>&1; then
-            setup_pipe_path
-        fi
-
-        echo -e "${BLUE}🔍 Verifying Pipe installation...${NC}"
-        if ! pipe -h >/dev/null 2>&1; then
-            echo -e "${RED}❌ Pipe installation failed! Checking PATH: $PATH${NC}"
+            echo -e "${RED}❌ Pipe installation failed. Please check logs in $LOG_FILE.${NC}"
             return_to_menu
             return
         fi
-
-        echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
     fi
-
+    sudo apt update && sudo apt install -y ffmpeg jq python3 python3-venv
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️ ffmpeg not found. Attempting to install...${NC}"
+        sudo apt install -y ffmpeg
+        if ! command -v ffmpeg >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ Failed to install ffmpeg. Continuing without it...${NC}"
+        else
+            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
+        fi
+    fi
+    if ! command -v jq >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️ jq not found. Attempting to install...${NC}"
+        sudo apt install -y jq
+        if ! command -v jq >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ Failed to install jq. Continuing without it...${NC}"
+        else
+            echo -e "${GREEN}✅ jq installed successfully.${NC}"
+        fi
+    fi
+    setup_venv
+    if [ -f "$HOME/.pipe-cli.json" ]; then
+        echo -e "${YELLOW}⚠️ Existing Pipe configuration found. Skipping user creation...${NC}"
+        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json")
+        return
+    fi
     read -r -p "$(echo -e 👤 Enter your desired username: )" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
     pipe_output=$(pipe new-user "$username" 2>&1)
@@ -152,12 +199,10 @@ install_node() {
     fi
     echo -e "${GREEN}✅ User created. Save these details:${NC}"
     echo "$pipe_output"
-
-    solana_pubkey=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
-    echo -e "${GREEN}🔑 Your Solana Public Key: $solana_pubkey${NC}"
-
-    if [ -n "$solana_pubkey" ] && [ -f "$HOME/.pipe-cli.json" ]; then
-        jq --arg sp "$solana_pubkey" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json && mv tmp.json "$HOME/.pipe-cli.json"
+    SOLANA_PUBKEY=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
+    echo -e "${GREEN}🔑 Your Solana Public Key: $SOLANA_PUBKEY${NC}"
+    if [ -n "$SOLANA_PUBKEY" ] && [ -f "$HOME/.pipe-cli.json" ]; then
+        jq --arg sp "$SOLANA_PUBKEY" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json && mv tmp.json "$HOME/.pipe-cli.json"
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-cli.json${NC}"
         else
@@ -166,35 +211,27 @@ install_node() {
     else
         echo -e "${RED}❌ Could not save Solana Public Key: File or key not found.${NC}"
     fi
-
     echo -e "${BLUE}💾 Your credentials are below. Copy and save them, then press Enter to continue:${NC}"
-    cat "/home/$USER/.pipe-cli.json" || echo -e "${RED}❌ Failed to display credentials file.${NC}"
+    cat "$HOME/.pipe-cli.json" 2>/dev/null || echo -e "${RED}❌ Failed to display credentials file.${NC}"
     read -s -p "Press Enter after saving your credentials..."
-
     clear
-
     read -p "$(echo -e 🔗 Enter a referral code \(or press Enter to use my refer code 🥹\):)" referral_code
-
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
         echo -e "${YELLOW}🔗 Using default referral code: $referral_code${NC}"
     fi
-
     echo -e "${BLUE}✅ Applying referral code...${NC}"
-    pipe referral apply "$referral_code" || echo -e "${RED}❌ Failed to apply referral code.${NC}"
-    pipe referral generate >/dev/null 2>&1 || echo -e "${RED}❌ Failed to generate referral code.${NC}"
+    pipe referral apply "$referral_code" || echo -e "${YELLOW}⚠️ Failed to apply referral code. Continuing...${NC}"
+    pipe referral generate >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ Failed to generate referral code. Continuing...${NC}"
 }
-
 
 auto_claim_faucet() {
     cat << 'EOF' > solana_airdrop.py
 #!/usr/bin/env python3
 import requests, time, uuid
-
 RPC_URL = "https://api.devnet.solana.com"
 LAMPORTS_PER_SOL = 1_000_000_000
 DEFAULT_SOL = 5
-
 def rpc(method: str, params):
     payload = {
         "jsonrpc": "2.0",
@@ -211,11 +248,9 @@ def rpc(method: str, params):
         return data["result"]
     except requests.RequestException as e:
         raise RuntimeError("Network error: " + str(e))
-
 def request_airdrop(pubkey: str, sol: float = DEFAULT_SOL) -> str:
     lamports = int(sol * LAMPORTS_PER_SOL)
     return rpc("requestAirdrop", [pubkey, lamports])
-
 def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
     start = time.time()
     while time.time() - start < timeout_s:
@@ -228,7 +263,6 @@ def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
             pass
         time.sleep(1.2)
     return False
-
 def main(pubkey: str):
     try:
         print(f"Requesting airdrop of {DEFAULT_SOL} SOL to {pubkey} ...")
@@ -246,7 +280,6 @@ def main(pubkey: str):
         return False, str(e)
     except Exception as e:
         raise RuntimeError("Network error: " + str(e))
-
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
@@ -256,6 +289,14 @@ if __name__ == "__main__":
         print("Please provide a Solana public key.")
 EOF
     chmod +x solana_airdrop.py
+    if [ -z "$SOLANA_PUBKEY" ]; then
+        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json" 2>/dev/null)
+        if [ "$SOLANA_PUBKEY" = "Not found" ]; then
+            echo -e "${RED}❌ Solana Public Key not found. Please run 'Install Node' first.${NC}"
+            return_to_menu
+            return
+        fi
+    fi
     retries=0
     max_retries=3
     while [ $retries -lt $max_retries ]; do
@@ -269,120 +310,144 @@ EOF
             rm -f solana_airdrop.py
             return 0
         else
-            echo -e "${RED}❌ Airdrop failed: $message${NC}"
+            echo -e "${YELLOW}⚠️ Airdrop failed: $message${NC}"
             retries=$((retries+1))
             sleep 5
         fi
     done
     rm -f solana_airdrop.py
-    echo -e "${RED}❌ Auto claim failed after $max_retries attempts.${NC}"
+    echo -e "${YELLOW}⚠️ Auto claim failed after $max_retries attempts.${NC}"
     echo -e "${YELLOW}💰 Please claim 5 Devnet SOL manually from https://faucet.solana.com/ using your Solana Public Key: $SOLANA_PUBKEY${NC}"
     read -r -p "✅ Enter 'yes' to confirm you have claimed the SOL: " confirmation
     if [ "$confirmation" != "yes" ]; then
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
-        cleanup
         exit 1
     fi
 }
 
 perform_swap() {
-    echo -e "${BLUE}⏳ Waiting 10 seconds before swapping...${NC}"
-    sleep 10
-    echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
-    swap_output=$(pipe swap-sol-for-pipe 2 2>&1)
-    if [ $? -eq 0 ]; then
-        echo "$swap_output"
-        echo -e "${GREEN}✅ Swap successful.${NC}"
-    else
-        echo -e "${RED}❌ Failed to swap SOL for PIPE: $swap_output${NC}"
-    fi
-    return_to_menu
-}
-
-
-upload_file() {
-    VENV_DIR="$HOME/pipe_venv"
-    if [ ! -d "$VENV_DIR" ]; then
-        echo -e "${RED}❌ Virtual environment not found. Setting it up now...${NC}"
-        setup_venv
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}❌ Failed to set up virtual environment. Returning to menu.${NC}"
+    if [ -z "$SOLANA_PUBKEY" ]; then
+        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json" 2>/dev/null)
+        if [ "$SOLANA_PUBKEY" = "Not found" ]; then
+            echo -e "${RED}❌ Solana Public Key not found. Please run 'Install Node' first.${NC}"
             return_to_menu
             return
         fi
     fi
+    retries=0
+    max_retries=3
+    while [ $retries -lt $max_retries ]; do
+        attempt=$((retries+1))
+        echo -e "${BLUE}⏳ Waiting 10 seconds before swapping (Attempt ${attempt}/${max_retries})...${NC}"
+        sleep 10
+        echo -e "${BLUE}🔄 Swapping 2 SOL for PIPE...${NC}"
+        swap_output=$(pipe swap-sol-for-pipe 2 2>&1)
+        if [ $? -eq 0 ]; then
+            echo "$swap_output"
+            echo -e "${GREEN}✅ Swap successful.${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}⚠️ Failed to swap SOL for PIPE: $swap_output${NC}"
+            retries=$((retries+1))
+            sleep 5
+        fi
+    done
+    echo -e "${RED}❌ Swap failed after $max_retries attempts. Please try again later or check your SOL balance at https://faucet.solana.com/.${NC}"
+    return_to_menu
+}
+
+upload_file() {
+    VENV_DIR="$HOME/pipe_venv"
+    if [ ! -d "$VENV_DIR" ]; then
+        setup_venv
+    fi
     source "$VENV_DIR/bin/activate"
-    for package in yt-dlp requests moviepy; do
-        if ! pip show $package >/dev/null 2>&1; then
-            echo -e "${YELLOW}📦 Installing missing package: $package...${NC}"
-            pip install $package
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}❌ Failed to install $package. Please check your internet connection or pip configuration.${NC}"
+    available_sources=("manual")
+    if pip show yt-dlp >/dev/null 2>&1; then available_sources+=("youtube"); fi
+    if pip show requests >/dev/null 2>&1; then available_sources+=("pixabay" "pexels"); fi
+    if [ ${#available_sources[@]} -eq 1 ]; then
+        echo -e "${YELLOW}⚠️ No download sources available (yt-dlp or requests not installed). Only manual upload is available.${NC}"
+    fi
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️ ffmpeg is not installed. Attempting to install...${NC}"
+        sudo apt update && sudo apt install -y ffmpeg
+        if ! command -v ffmpeg >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ Failed to install ffmpeg. Continuing without it...${NC}"
+        else
+            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
+        fi
+    fi
+    if ! command -v pipe >/dev/null 2>&1; then
+        setup_pipe_path
+        if ! command -v pipe >/dev/null 2>&1; then
+            echo -e "${RED}❌ Pipe command not found. Attempting to install...${NC}"
+            install_pipe
+            if ! command -v pipe >/dev/null 2>&1; then
+                echo -e "${RED}❌ Pipe installation failed. Please check logs in $LOG_FILE.${NC}"
                 deactivate
                 return_to_menu
                 return
             fi
         fi
-    done
-    echo -e "${GREEN}✅ All Python packages verified.${NC}"
-
-    if ! command -v ffmpeg >/dev/null 2>&1; then
-        echo -e "${YELLOW}⚠️ ffmpeg is not installed. Attempting to install...${NC}"
-        sudo apt update
-        sudo apt install -y ffmpeg
-        if ! command -v ffmpeg >/dev/null 2>&1; then
-            echo -e "${RED}❌ ffmpeg installation failed. Falling back to moviepy for video concatenation. For faster processing, install ffmpeg manually with 'sudo apt install ffmpeg'.${NC}"
-        else
-            echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
-        fi
     fi
-
     while true; do
         clear
         show_header
         echo -e "${BLUE}${BOLD}======================= Upload File Submenu =======================${NC}"
-        echo -e "${YELLOW}1. 📹 Upload from YouTube (yt-dlp)${NC}"
-        echo -e "${YELLOW}2. 🎥 Upload from Pixabay${NC}"
-        echo -e "${YELLOW}3. 📽️ Upload from Pexels${NC}"
-        echo -e "${YELLOW}4. 🗂️ Manual Upload (from home or pipe folder)${NC}"
-        echo -e "${YELLOW}5. 🔙 Back to Main Menu${NC}"
+        for i in "${!available_sources[@]}"; do
+            case ${available_sources[$i]} in
+                "youtube") echo -e "${YELLOW}$((i+1)). 📹 Upload from YouTube (yt-dlp)${NC}" ;;
+                "pixabay") echo -e "${YELLOW}$((i+1)). 🎥 Upload from Pixabay${NC}" ;;
+                "pexels") echo -e "${YELLOW}$((i+1)). 📽️ Upload from Pexels${NC}" ;;
+                "manual") echo -e "${YELLOW}$((i+1)). 🗂️ Manual Upload (from home or pipe folder)${NC}" ;;
+            esac
+        done
+        echo -e "${YELLOW}$(( ${#available_sources[@]} + 1 )). 🔙 Back to Main Menu${NC}"
         echo -e "${BLUE}=================================================================${NC}"
         read -p "$(echo -e Select an option: )" subchoice
-        case $subchoice in
-            1)
+        if [ "$subchoice" -eq $(( ${#available_sources[@]} + 1 )) ]; then
+            deactivate
+            return
+        fi
+        if [[ ! "$subchoice" =~ ^[0-9]+$ ]] || [ "$subchoice" -lt 1 ] || [ "$subchoice" -gt ${#available_sources[@]} ]; then
+            echo -e "${RED}❌ Invalid option. Try again.${NC}"
+            sleep 1
+            continue
+        fi
+        source_type=${available_sources[$((subchoice-1))]}
+        case $source_type in
+            youtube)
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'random full hd'\): )" query
                 echo -e "${BLUE}📥 Downloading video from YouTube...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
-                python3 video_downloader.py "$query" "$output_file"
+                python3 video_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
                 ;;
-            2)
+            pixabay)
                 API_KEY_FILE="$HOME/.pixabay_api_key"
                 if [ ! -f "$API_KEY_FILE" ]; then
-                    read -p "$(echo -e 🔑 Enter your Pixabay API key: )" api_key
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ Pixabay API key saved for future use.${NC}"
+                    echo "pexels: iur1f5KGwvSIR1xr8I1t3KR3NP88wFXeCyV12ibHnioNXQYTy95KhE69" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ Default Pixabay API key set.${NC}"
                 fi
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
-                python3 pixabay_downloader.py "$query" "$output_file"
+                python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
                 ;;
-            3)
+            pexels)
                 API_KEY_FILE="$HOME/.pexels_api_key"
                 if [ ! -f "$API_KEY_FILE" ]; then
-                    read -p "$(echo -e 🔑 Enter your Pexels API key: )" api_key
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ Pexels API key saved for future use.${NC}"
+                    echo "51848865-07253475f9fc0309b02c38a39" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ Default Pexels API key set.${NC}"
                 fi
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pexels...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
-                python3 pexels_downloader.py "$query" "$output_file"
+                python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
                 ;;
-            4)
+            manual)
                 echo -e "${BLUE}🔍 Searching for .mp4 files in $HOME and $HOME/pipe...${NC}"
                 videos=($(find "$HOME" "$HOME/pipe" -type f -name "*.mp4" 2>/dev/null))
                 if [ ${#videos[@]} -eq 0 ]; then
@@ -406,81 +471,78 @@ upload_file() {
                     continue
                 fi
                 ;;
-            5) deactivate; return ;;
-            *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1; continue ;;
         esac
-
-        deactivate
-
-        if [ -f "$output_file" ] || [ "$subchoice" = "4" ]; then
-            if [ "$subchoice" = "4" ]; then
+        if [ -f "$output_file" ] || [ "$source_type" = "manual" ]; then
+            if [ "$source_type" = "manual" ]; then
                 file_to_upload="$selected"
             else
                 file_to_upload="$output_file"
             fi
             echo -e "${BLUE}⬆️ Uploading video...${NC}"
-            if ! command -v pipe >/dev/null 2>&1; then
-                setup_pipe_path
-            fi
-            upload_output=$(pipe upload-file "$file_to_upload" "$output_file" 2>&1)
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}❌ Failed to upload file: $upload_output${NC}"
-                if [ "$subchoice" != "4" ]; then
-                    rm -f "$output_file"
-                fi
-                return_to_menu
-                continue
-            fi
-            echo "$upload_output"
-            file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
-            link_output=$(pipe create-public-link "$output_file" 2>&1)
-            if [ $? -ne 0 ]; then
-                echo -e "${RED}❌ Failed to create public link: $link_output${NC}"
-                if [ "$subchoice" != "4" ]; then
-                    rm -f "$output_file"
-                fi
-                return_to_menu
-                continue
-            fi
-            echo "$link_output"
-            direct_link=$(echo "$link_output" | grep "Direct link" -A 1 | tail -n 1 | awk '{$1=$1};1')
-            social_link=$(echo "$link_output" | grep "Social media link" -A 1 | tail -n 1 | awk '{$1=$1};1')
-            if [ -n "$file_id" ]; then
-                echo -e "${BLUE}💾 Saving file details to file_details.json...${NC}"
-                if [ ! -f "file_details.json" ]; then
-                    echo "[]" > file_details.json
-                fi
-                jq --arg fn "$output_file" --arg fid "$file_id" --arg dl "$direct_link" --arg sl "$social_link" \
-                    '. + [{"file_name": $fn, "file_id": $fid, "direct_link": $dl, "social_link": $sl}]' \
-                    file_details.json > tmp.json && mv tmp.json file_details.json
+            retries=0
+            max_retries=3
+            while [ $retries -lt $max_retries ]; do
+                attempt=$((retries+1))
+                echo -e "${BLUE}📤 Upload attempt ${attempt}/${max_retries}...${NC}"
+                upload_output=$(pipe upload-file "$file_to_upload" "$output_file" 2>&1)
                 if [ $? -eq 0 ]; then
-                    echo -e "${GREEN}✅ File details saved successfully.${NC}"
+                    echo "$upload_output" | tee -a "$LOG_FILE"
+                    file_id=$(echo "$upload_output" | grep "File ID (Blake3)" | awk '{print $NF}')
+                    link_output=$(pipe create-public-link "$output_file" 2>&1)
+                    if [ $? -eq 0 ]; then
+                        echo "$link_output" | tee -a "$LOG_FILE"
+                        direct_link=$(echo "$link_output" | grep "Direct link" -A 1 | tail -n 1 | awk '{$1=$1};1')
+                        social_link=$(echo "$link_output" | grep "Social media link" -A 1 | tail -n 1 | awk '{$1=$1};1')
+                        if [ -n "$file_id" ]; then
+                            echo -e "${BLUE}💾 Saving file details to file_details.json...${NC}"
+                            if [ ! -f "file_details.json" ]; then
+                                echo "[]" > file_details.json
+                            fi
+                            jq --arg fn "$output_file" --arg fid "$file_id" --arg dl "$direct_link" --arg sl "$social_link" \
+                               '. + [{"file_name": $fn, "file_id": $fid, "direct_link": $dl, "social_link": $sl}]' \
+                               file_details.json > tmp.json && mv tmp.json file_details.json
+                            if [ $? -eq 0 ]; then
+                                echo -e "${GREEN}✅ File details saved successfully.${NC}"
+                            else
+                                echo -e "${YELLOW}⚠️ Failed to save file details to file_details.json${NC}"
+                            fi
+                            if [ "$source_type" != "manual" ]; then
+                                echo -e "${BLUE}🗑️ Deleting local video file...${NC}"
+                                rm -f "$output_file"
+                            fi
+                            break
+                        else
+                            echo -e "${YELLOW}⚠️ Failed to extract File ID.${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}⚠️ Failed to create public link: $link_output${NC}"
+                    fi
                 else
-                    echo -e "${RED}❌ Failed to save file details to file_details.json${NC}"
+                    echo -e "${YELLOW}⚠️ Upload failed: $upload_output${NC}"
                 fi
-                if [ "$subchoice" != "4" ]; then
-                    echo -e "${BLUE}🗑️ Deleting local video file...${NC}"
-                    rm -f "$output_file"
-                fi
-            else
-                echo -e "${RED}❌ Failed to extract File ID.${NC}"
-                if [ "$subchoice" != "4" ]; then
-                    rm -f "$output_file"
+                retries=$((retries+1))
+                sleep 5
+            done
+            if [ $retries -eq $max_retries ]; then
+                echo -e "${RED}❌ Upload failed after $max_retries attempts. Check logs in $LOG_FILE.${NC}"
+                if [ "$source_type" != "manual" ]; then
+                    rm -f "$output_file" 2>/dev/null
                 fi
             fi
         else
-            echo -e "${RED}❌ No video file found. Download may have failed or been canceled.${NC}"
+            echo -e "${YELLOW}⚠️ No video file found. Download may have failed or been canceled.${NC}"
         fi
         return_to_menu
     done
+    deactivate
 }
 
 show_file_info() {
     echo -e "${BLUE}📄 Uploaded File Details:${NC}"
     if [ -f "file_details.json" ]; then
-        count=$(jq '. | length' file_details.json)
+        count=$(jq '. | length' file_details.json 2>/dev/null || echo 0)
         if [ "$count" -eq 0 ]; then
-            echo -e "${RED}❌ No file details found in file_details.json.${NC}"
+            echo -e "${YELLOW}⚠️ No file details found in file_details.json.${NC}"
         else
             for ((i=0; i<count; i++)); do
                 echo -e "${BLUE}📂 File $((i+1)) of $count:${NC}"
@@ -496,7 +558,7 @@ show_file_info() {
             done
         fi
     else
-        echo -e "${RED}❌ No file details found.${NC}"
+        echo -e "${YELLOW}⚠️ No file details found.${NC}"
     fi
     return_to_menu
 }
@@ -504,16 +566,15 @@ show_file_info() {
 show_credentials() {
     echo -e "${BLUE}🔑 Pipe Credentials:${NC}"
     if [ -f "$HOME/.pipe-cli.json" ]; then
-        user_id=$(jq -r '.user_id' "$HOME/.pipe-cli.json")
-        user_app_key=$(jq -r '.user_app_key' "$HOME/.pipe-cli.json")
-        username=$(jq -r '.username' "$HOME/.pipe-cli.json")
-        access_token=$(jq -r '.auth_tokens.access_token' "$HOME/.pipe-cli.json")
-        refresh_token=$(jq -r '.auth_tokens.refresh_token' "$HOME/.pipe-cli.json")
-        token_type=$(jq -r '.auth_tokens.token_type' "$HOME/.pipe-cli.json")
-        expires_in=$(jq -r '.auth_tokens.expires_in' "$HOME/.pipe-cli.json")
-        expires_at=$(jq -r '.auth_tokens.expires_at' "$HOME/.pipe-cli.json")
+        user_id=$(jq -r '.user_id // "Not found"' "$HOME/.pipe-cli.json")
+        user_app_key=$(jq -r '.user_app_key // "Not found"' "$HOME/.pipe-cli.json")
+        username=$(jq -r '.username // "Not found"' "$HOME/.pipe-cli.json")
+        access_token=$(jq -r '.auth_tokens.access_token // "Not found"' "$HOME/.pipe-cli.json")
+        refresh_token=$(jq -r '.auth_tokens.refresh_token // "Not found"' "$HOME/.pipe-cli.json")
+        token_type=$(jq -r '.auth_tokens.token_type // "Not found"' "$HOME/.pipe-cli.json")
+        expires_in=$(jq -r '.auth_tokens.expires_in // "Not found"' "$HOME/.pipe-cli.json")
+        expires_at=$(jq -r '.auth_tokens.expires_at // "Not found"' "$HOME/.pipe-cli.json")
         solana_pubkey=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json")
-        
         read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         echo -e "${YELLOW}👤 Username: ${GREEN}$username${NC}"
         echo -e "${YELLOW}🆔 User ID: ${GREEN}$user_id${NC}"
@@ -531,43 +592,57 @@ show_credentials() {
             echo -e "${YELLOW}🔄 Refresh Token: ${GREEN}${refresh_token:0:20}... (truncated for brevity)${NC}"
         fi
     else
-        echo -e "${RED}❌ Credentials file (~/.pipe-cli.json) not found.${NC}"
+        echo -e "${YELLOW}⚠️ Credentials file (~/.pipe-cli.json) not found.${NC}"
     fi
     return_to_menu
 }
 
 show_referral() {
     echo -e "${BLUE}📊 Your referral stats:${NC}"
-    pipe referral show || echo -e "${RED}❌ Failed to retrieve referral stats.${NC}"
+    pipe referral show 2>&1 | tee -a "$LOG_FILE" || echo -e "${YELLOW}⚠️ Failed to retrieve referral stats.${NC}"
     return_to_menu
 }
 
 swap_tokens() {
-    echo "-----------------------------------"
-    echo "🔥 PIPE Swapping Menu 🔥"
-    echo "-----------------------------------"
-    read -p "Enter amount to swap: " AMOUNT
-
-    if [[ -z "$AMOUNT" ]]; then
-        echo "❌ Amount cannot be empty!"
+    if [ -z "$SOLANA_PUBKEY" ]; then
+        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json" 2>/dev/null)
+        if [ "$SOLANA_PUBKEY" = "Not found" ]; then
+            echo -e "${RED}❌ Solana Public Key not found. Please run 'Install Node' first.${NC}"
+            return_to_menu
+            return
+        fi
+    fi
+    echo -e "${BLUE}🔥 PIPE Swapping Menu${NC}"
+    read -p "Enter amount to swap (default 2 SOL): " AMOUNT
+    AMOUNT=${AMOUNT:-2}
+    if [[ ! "$AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo -e "${RED}❌ Invalid amount. Must be a number.${NC}"
         return_to_menu
         return
     fi
-
-    echo "✅ Swapping $AMOUNT PIPE tokens..."
-    swap_output=$(pipe swap-sol-for-pipe "$AMOUNT" 2>&1)
-    if [[ $? -eq 0 ]]; then
-        echo "🎉 Successfully swapped $AMOUNT PIPE!"
-        echo "$swap_output"
-    else
-        echo "⚠️ Error while swapping tokens: $swap_output"
-    fi
+    retries=0
+    max_retries=3
+    while [ $retries -lt $max_retries ]; do
+        attempt=$((retries+1))
+        echo -e "${BLUE}🔄 Swapping $AMOUNT SOL for PIPE (Attempt ${attempt}/${max_retries})...${NC}"
+        swap_output=$(pipe swap-sol-for-pipe "$AMOUNT" 2>&1)
+        if [ $? -eq 0 ]; then
+            echo "$swap_output" | tee -a "$LOG_FILE"
+            echo -e "${GREEN}✅ Successfully swapped $AMOUNT SOL for PIPE!${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}⚠️ Swap failed: $swap_output${NC}"
+            retries=$((retries+1))
+            sleep 5
+        fi
+    done
+    echo -e "${RED}❌ Swap failed after $max_retries attempts. Please check your SOL balance at https://faucet.solana.com/.${NC}"
     return_to_menu
 }
 
 check_token_usage() {
     echo -e "${BLUE}📈 Checking token usage...${NC}"
-    pipe token-usage || echo -e "${RED}❌ Failed to check token usage.${NC}"
+    pipe token-usage 2>&1 | tee -a "$LOG_FILE" || echo -e "${YELLOW}⚠️ Failed to check token usage.${NC}"
     return_to_menu
 }
 
@@ -585,27 +660,22 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
-
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
-
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
-
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
-
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
-
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
-        print("\033[0;31m❌ moviepy is not installed. Cannot concatenate with moviepy.\033[0m")
+        print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
         return False
     try:
         clips = []
@@ -615,9 +685,9 @@ def concatenate_with_moviepy(files, output_file):
                     clip = VideoFileClip(fn)
                     clips.append(clip)
                 except Exception as e:
-                    print(f"\033[0;31m⚠️ Skipping invalid file {fn}: {str(e)}\033[0m")
+                    print(f"⚠️ Skipping invalid file {fn}: {str(e)}")
         if not clips:
-            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            print("⚠️ No valid video clips to concatenate.")
             return False
         final_clip = concatenate_videoclips(clips, method="compose")
         final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac", temp_audiofile="temp-audio.m4a", remove_temp=True, threads=2)
@@ -626,9 +696,8 @@ def concatenate_with_moviepy(files, output_file):
         final_clip.close()
         return os.path.exists(output_file) and os.path.getsize(output_file) > 0
     except Exception as e:
-        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
-
 def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1024*1024, min_filesize=50*1024*1024):
     ydl_opts = {
         'format': 'best',
@@ -637,12 +706,10 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
         'progress_hooks': [progress_hook],
         'outtmpl': '%(title)s.%(ext)s'
     }
-    
     total_downloaded = 0
     total_size = 0
     start_time = time.time()
     downloaded_files = []
-    
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f"ytsearch20:{query}", download=False)
@@ -652,43 +719,37 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
                 size = v.get("filesize") or v.get("filesize_approx")
                 if size and min_filesize <= size <= max_filesize:
                     candidates.append((size, v))
-            
             if not candidates:
-                print("\033[0;31m❌ No suitable videos found (at least 50MB and up to ~1GB).\033[0m")
+                print("⚠️ No suitable videos found (at least 50MB and up to ~1GB).")
                 return
-            
             for size, v in sorted(candidates, key=lambda x: -x[0]):
                 if total_size + size <= target_size_mb * 1024 * 1024:
                     total_size += size
                     current_file = len(downloaded_files) + 1
-                    print(f"\033[0;34m🎬 Downloading video {current_file}: {v['title']} ({format_size(size)})\033[0m")
+                    print(f"🎬 Downloading video {current_file}: {v['title']} ({format_size(size)})")
                     ydl.download([v['webpage_url']])
                     filename = ydl.prepare_filename(v)
                     if os.path.exists(filename) and os.path.getsize(filename) > 0:
                         downloaded_files.append(filename)
                         total_downloaded += size
                     else:
-                        print(f"\033[0;31m❌ Failed to download or empty file: {filename}\033[0m")
+                        print(f"⚠️ Failed to download or empty file: {filename}")
                         continue
-                    
                     elapsed = time.time() - start_time
                     speed = total_downloaded / (1024*1024*elapsed) if elapsed > 0 else 0
                     eta = (total_size - total_downloaded) / (speed * 1024*1024) if speed > 0 else 0
-                    
-                    print(f"\033[0;32m✅ Overall Progress: {draw_progress_bar(total_downloaded, total_size)} "
+                    print(f"✅ Overall Progress: {draw_progress_bar(total_downloaded, total_size)} "
                           f"({format_size(total_downloaded)}/{format_size(total_size)}) "
-                          f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m")
-
+                          f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}")
         if not downloaded_files:
-            print("\033[0;31m❌ No videos found close to 1GB.\033[0m")
+            print("⚠️ No videos found close to 1GB.")
             return
-
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
             success = False
             if check_ffmpeg():
-                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
+                print("🔗 Concatenating videos with ffmpeg...")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
@@ -696,50 +757,46 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
                 if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
                     success = True
                 else:
-                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                    print(f"⚠️ ffmpeg concatenation failed: {result.stderr}")
                 if os.path.exists('list.txt'):
                     os.remove('list.txt')
             if not success:
-                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                print("🔗 Falling back to moviepy for concatenation...")
                 success = concatenate_with_moviepy(downloaded_files, output_file)
             if not success:
-                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                print("⚠️ Concatenation failed. Using first video only.")
                 os.rename(downloaded_files[0], output_file)
                 downloaded_files = downloaded_files[1:]
             for fn in downloaded_files:
                 if os.path.exists(fn):
                     os.remove(fn)
-
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
+            print(f"✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})")
         else:
-            print("\033[0;31m❌ Failed to create final video file.\033[0m")
-
+            print("⚠️ Failed to create final video file.")
     except Exception as e:
-        print(f"\033[0;31m❌ An error occurred: {str(e)}\033[0m")
+        print(f"⚠️ An error occurred: {str(e)}")
         for fn in downloaded_files:
             if os.path.exists(fn):
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
-
 def progress_hook(d):
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
         total = d.get('total_bytes', d.get('total_bytes_estimate', 1000000))
         speed = d.get('speed', 0) or 0
         eta = d.get('eta', 0) or 0
-        print(f"\r\033[0;34m⬇️ File Progress: {draw_progress_bar(downloaded, total)} "
+        print(f"\r⬇️ File Progress: {draw_progress_bar(downloaded, total)} "
               f"({format_size(downloaded)}/{format_size(total)}) "
-              f"Speed: {speed/(1024*1024):.2f} MB/s ETA: {format_time(eta)}\033[0m", end='')
+              f"Speed: {speed/(1024*1024):.2f} MB/s ETA: {format_time(eta)}", end='')
     elif d['status'] == 'finished':
-        print("\r\033[0;32m✅ File Download completed\033[0m")
-
+        print("\r✅ File Download completed")
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
     else:
-        print("\033[0;31mPlease provide a search query and output filename.\033[0m")
+        print("Please provide a search query and output filename.")
 EOF
 
 cat << 'EOF' > pixabay_downloader.py
@@ -756,27 +813,22 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
-
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
-
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
-
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
-
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
-
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
-        print("\033[0;31m❌ moviepy is not installed. Cannot concatenate with moviepy.\033[0m")
+        print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
         return False
     try:
         clips = []
@@ -786,9 +838,9 @@ def concatenate_with_moviepy(files, output_file):
                     clip = VideoFileClip(fn)
                     clips.append(clip)
                 except Exception as e:
-                    print(f"\033[0;31m⚠️ Skipping invalid file {fn}: {str(e)}\033[0m")
+                    print(f"⚠️ Skipping invalid file {fn}: {str(e)}")
         if not clips:
-            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            print("⚠️ No valid video clips to concatenate.")
             return False
         final_clip = concatenate_videoclips(clips, method="compose")
         final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac", temp_audiofile="temp-audio.m4a", remove_temp=True, threads=2)
@@ -797,46 +849,41 @@ def concatenate_with_moviepy(files, output_file):
         final_clip.close()
         return os.path.exists(output_file) and os.path.getsize(output_file) > 0
     except Exception as e:
-        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
-
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pixabay_api_key')
     if not os.path.exists(api_key_file):
-        print("\033[0;31m❌ Pixabay API key file not found.\033[0m")
+        print("⚠️ Pixabay API key file not found.")
         return
     with open(api_key_file, 'r') as f:
         api_key = f.read().strip()
-
     per_page = 100
     try:
         url = f"https://pixabay.com/api/videos/?key={api_key}&q={query}&per_page={per_page}&min_width=1920&min_height=1080&video_type=all"
         resp = requests.get(url, timeout=10)
         if resp.status_code != 200:
-            print(f"\033[0;31m❌ Error fetching Pixabay API: {resp.text}\033[0m")
+            print(f"⚠️ Error fetching Pixabay API: {resp.text}")
             return
         data = resp.json()
         videos = data.get('hits', [])
         if not videos:
-            print("\033[0;31m❌ No videos found for query.\033[0m")
+            print("⚠️ No videos found for query.")
             return
-
         videos.sort(key=lambda x: x['duration'], reverse=True)
-
         downloaded_files = []
         total_size = 0
         total_downloaded = 0
         start_time = time.time()
-
         for i, v in enumerate(videos):
             video_url = v['videos'].get('large', {}).get('url') or v['videos'].get('medium', {}).get('url')
             if not video_url:
                 continue
             filename = f"pix_{i}_{''.join(random.choices(string.ascii_letters + string.digits, k=8))}.mp4"
-            print(f"\033[0;34m🎬 Downloading video {i+1}: {v['tags']} ({v['duration']}s)\033[0m")
+            print(f"🎬 Downloading video {i+1}: {v['tags']} ({v['duration']}s)")
             resp = requests.get(video_url, stream=True, timeout=10)
             size = int(resp.headers.get('content-length', 0))
-            if size < 50 * 1024 * 1024:  # Skip if <50MB
+            if size < 50 * 1024 * 1024:
                 continue
             with open(filename, 'wb') as f:
                 downloaded = 0
@@ -847,10 +894,10 @@ def download_videos(query, output_file, target_size_mb=1000):
                         percent = downloaded / size * 100 if size else 0
                         speed = downloaded / (1024*1024 * (time.time() - start_time)) if (time.time() - start_time) > 0 else 0
                         eta = (size - downloaded) / (speed * 1024*1024) if speed > 0 else 0
-                        print(f"\r\033[0;34m⬇️ File Progress: {draw_progress_bar(downloaded, size)} "
+                        print(f"\r⬇️ File Progress: {draw_progress_bar(downloaded, size)} "
                               f"({format_size(downloaded)}/{format_size(size)}) "
-                              f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m", end='')
-            print("\r\033[0;32m✅ File Download completed\033[0m")
+                              f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}", end='')
+            print("\r✅ File Download completed")
             file_size = os.path.getsize(filename) if os.path.exists(filename) else 0
             if file_size == 0:
                 if os.path.exists(filename):
@@ -861,17 +908,15 @@ def download_videos(query, output_file, target_size_mb=1000):
             downloaded_files.append(filename)
             if total_size >= target_size_mb * 1024 * 1024:
                 break
-
         if not downloaded_files:
-            print("\033[0;31m❌ No suitable videos downloaded.\033[0m")
+            print("⚠️ No suitable videos downloaded.")
             return
-
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
             success = False
             if check_ffmpeg():
-                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
+                print("🔗 Concatenating videos with ffmpeg...")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
@@ -879,38 +924,35 @@ def download_videos(query, output_file, target_size_mb=1000):
                 if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
                     success = True
                 else:
-                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                    print(f"⚠️ ffmpeg concatenation failed: {result.stderr}")
                 if os.path.exists('list.txt'):
                     os.remove('list.txt')
             if not success:
-                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                print("🔗 Falling back to moviepy for concatenation...")
                 success = concatenate_with_moviepy(downloaded_files, output_file)
             if not success:
-                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                print("⚠️ Concatenation failed. Using first video only.")
                 os.rename(downloaded_files[0], output_file)
                 downloaded_files = downloaded_files[1:]
             for fn in downloaded_files:
                 if os.path.exists(fn):
                     os.remove(fn)
-
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
+            print(f"✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})")
         else:
-            print("\033[0;31m❌ Failed to create final video file.\033[0m")
-
+            print("⚠️ Failed to create final video file.")
     except Exception as e:
-        print(f"\033[0;31m❌ An error occurred: {str(e)}\033[0m")
+        print(f"⚠️ An error occurred: {str(e)}")
         for fn in downloaded_files:
             if os.path.exists(fn):
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
-
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
     else:
-        print("\033[0;31mPlease provide a search query and output filename.\033[0m")
+        print("Please provide a search query and output filename.")
 EOF
 
 cat << 'EOF' > pexels_downloader.py
@@ -927,27 +969,22 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
-
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
-
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
-
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
-
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
-
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
-        print("\033[0;31m❌ moviepy is not installed. Cannot concatenate with moviepy.\033[0m")
+        print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
         return False
     try:
         clips = []
@@ -957,9 +994,9 @@ def concatenate_with_moviepy(files, output_file):
                     clip = VideoFileClip(fn)
                     clips.append(clip)
                 except Exception as e:
-                    print(f"\033[0;31m⚠️ Skipping invalid file {fn}: {str(e)}\033[0m")
+                    print(f"⚠️ Skipping invalid file {fn}: {str(e)}")
         if not clips:
-            print("\033[0;31m❌ No valid video clips to concatenate.\033[0m")
+            print("⚠️ No valid video clips to concatenate.")
             return False
         final_clip = concatenate_videoclips(clips, method="compose")
         final_clip.write_videofile(output_file, codec="libx264", audio_codec="aac", temp_audiofile="temp-audio.m4a", remove_temp=True, threads=2)
@@ -968,38 +1005,33 @@ def concatenate_with_moviepy(files, output_file):
         final_clip.close()
         return os.path.exists(output_file) and os.path.getsize(output_file) > 0
     except Exception as e:
-        print(f"\033[0;31m❌ Moviepy concatenation failed: {str(e)}\033[0m")
+        print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
-
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pexels_api_key')
     if not os.path.exists(api_key_file):
-        print("\033[0;31m❌ Pexels API key file not found.\033[0m")
+        print("⚠️ Pexels API key file not found.")
         return
     with open(api_key_file, 'r') as f:
         api_key = f.read().strip()
-
     per_page = 80
     try:
         headers = {'Authorization': api_key}
         url = f"https://api.pexels.com/videos/search?query={query}&per_page={per_page}&min_width=1920&min_height=1080"
         resp = requests.get(url, headers=headers, timeout=10)
         if resp.status_code != 200:
-            print(f"\033[0;31m❌ Error fetching Pexels API: {resp.text}\033[0m")
+            print(f"⚠️ Error fetching Pexels API: {resp.text}")
             return
         data = resp.json()
         videos = data.get('videos', [])
         if not videos:
-            print("\033[0;31m❌ No videos found for query.\033[0m")
+            print("⚠️ No videos found for query.")
             return
-
         videos.sort(key=lambda x: x['duration'], reverse=True)
-
         downloaded_files = []
         total_size = 0
         total_downloaded = 0
         start_time = time.time()
-
         for i, v in enumerate(videos):
             video_files = v.get('video_files', [])
             video_url = None
@@ -1010,10 +1042,10 @@ def download_videos(query, output_file, target_size_mb=1000):
             if not video_url:
                 continue
             filename = f"pex_{i}_{''.join(random.choices(string.ascii_letters + string.digits, k=8))}.mp4"
-            print(f"\033[0;34m🎬 Downloading video {i+1}: {v['id']} ({v['duration']}s)\033[0m")
+            print(f"🎬 Downloading video {i+1}: {v['id']} ({v['duration']}s)")
             resp = requests.get(video_url, stream=True, timeout=10)
             size = int(resp.headers.get('content-length', 0))
-            if size < 50 * 1024 * 1024:  # Skip if <50MB
+            if size < 50 * 1024 * 1024:
                 continue
             with open(filename, 'wb') as f:
                 downloaded = 0
@@ -1024,10 +1056,10 @@ def download_videos(query, output_file, target_size_mb=1000):
                         percent = downloaded / size * 100 if size else 0
                         speed = downloaded / (1024*1024 * (time.time() - start_time)) if (time.time() - start_time) > 0 else 0
                         eta = (size - downloaded) / (speed * 1024*1024) if speed > 0 else 0
-                        print(f"\r\033[0;34m⬇️ File Progress: {draw_progress_bar(downloaded, size)} "
+                        print(f"\r⬇️ File Progress: {draw_progress_bar(downloaded, size)} "
                               f"({format_size(downloaded)}/{format_size(size)}) "
-                              f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}\033[0m", end='')
-            print("\r\033[0;32m✅ File Download completed\033[0m")
+                              f"Speed: {speed:.2f} MB/s ETA: {format_time(eta)}", end='')
+            print("\r✅ File Download completed")
             file_size = os.path.getsize(filename) if os.path.exists(filename) else 0
             if file_size == 0:
                 if os.path.exists(filename):
@@ -1038,17 +1070,15 @@ def download_videos(query, output_file, target_size_mb=1000):
             downloaded_files.append(filename)
             if total_size >= target_size_mb * 1024 * 1024:
                 break
-
         if not downloaded_files:
-            print("\033[0;31m❌ No suitable videos downloaded.\033[0m")
+            print("⚠️ No suitable videos downloaded.")
             return
-
         if len(downloaded_files) == 1:
             os.rename(downloaded_files[0], output_file)
         else:
             success = False
             if check_ffmpeg():
-                print("\033[0;34m🔗 Concatenating videos with ffmpeg...\033[0m")
+                print("🔗 Concatenating videos with ffmpeg...")
                 with open('list.txt', 'w') as f:
                     for fn in downloaded_files:
                         f.write(f"file '{fn}'\n")
@@ -1056,38 +1086,35 @@ def download_videos(query, output_file, target_size_mb=1000):
                 if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
                     success = True
                 else:
-                    print(f"\033[0;31m❌ ffmpeg concatenation failed: {result.stderr}\033[0m")
+                    print(f"⚠️ ffmpeg concatenation failed: {result.stderr}")
                 if os.path.exists('list.txt'):
                     os.remove('list.txt')
             if not success:
-                print("\033[0;34m🔗 Falling back to moviepy for concatenation...\033[0m")
+                print("🔗 Falling back to moviepy for concatenation...")
                 success = concatenate_with_moviepy(downloaded_files, output_file)
             if not success:
-                print("\033[0;31m❌ Concatenation failed. Using first video only.\033[0m")
+                print("⚠️ Concatenation failed. Using first video only.")
                 os.rename(downloaded_files[0], output_file)
                 downloaded_files = downloaded_files[1:]
             for fn in downloaded_files:
                 if os.path.exists(fn):
                     os.remove(fn)
-
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            print(f"\033[0;32m✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})\033[0m")
+            print(f"✅ Video ready: {output_file} ({format_size(os.path.getsize(output_file))})")
         else:
-            print("\033[0;31m❌ Failed to create final video file.\033[0m")
-
+            print("⚠️ Failed to create final video file.")
     except Exception as e:
-        print(f"\033[0;31m❌ An error occurred: {str(e)}\033[0m")
+        print(f"⚠️ An error occurred: {str(e)}")
         for fn in downloaded_files:
             if os.path.exists(fn):
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
-
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
     else:
-        print("\033[0;31mPlease provide a search query and output filename.\033[0m")
+        print("Please provide a search query and output filename.")
 EOF
 
 while true; do
@@ -1106,7 +1133,7 @@ while true; do
     read -p "$(echo -e Select an option: )" choice
     IN_MENU=0
     case $choice in
-        1) 
+        1)
            install_node
            auto_claim_faucet
            perform_swap
