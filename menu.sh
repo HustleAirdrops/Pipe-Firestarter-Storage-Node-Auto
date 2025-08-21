@@ -1212,6 +1212,7 @@ EOF
 
 while true; do
     show_header
+    setup_pipe_path >/dev/null 2>&1
     echo -e "${BLUE}${BOLD}======================= Pipe NODE MANAGER BY Aashish 💖 =======================${NC}"
     echo -e "${YELLOW}1. 🛠️ Install Node${NC}"
     echo -e "${YELLOW}2. ⬆️ Upload File${NC}"
