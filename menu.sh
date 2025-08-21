@@ -12,7 +12,7 @@ SOLANA_PUBKEY=""
 LOG_DIR="$HOME/pipe_logs"
 LOG_FILE="$LOG_DIR/pipe_manager_$(date +%Y%m%d_%H%M%S).log"
 
-# Trap Ctrl+C
+# Trap Ctrl+C AAAAAAAAAAAAAAAAAAA
 trap 'handle_ctrl_c' SIGINT
 
 # Create log directory and file
@@ -1116,7 +1116,6 @@ if __name__ == "__main__":
         download_videos(sys.argv[1], sys.argv[2])
     else:
         print("Please provide a search query and output filename.")
-EOF
 
 while true; do
     show_header
