@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Color codes for terminal output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -6,13 +7,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
+
+# Initialize variables
 CTRL_C_COUNT=0
 IN_MENU=0
 SOLANA_PUBKEY=""
 LOG_DIR="$HOME/pipe_logs"
 LOG_FILE="$LOG_DIR/pipe_manager_$(date +%Y%m%d_%H%M%S).log"
 
-# Trap Ctrl+C AAAAAAAAAAAAAAAAAAA
+# Trap Ctrl+C
 trap 'handle_ctrl_c' SIGINT
 
 # Create log directory and file
@@ -142,7 +145,7 @@ install_pipe() {
         echo -e "${RED}❌ Failed to install Pipe!${NC}"
         cd "$HOME"
         return 1
-        
+    fi
     cd "$HOME"
     setup_pipe_path
     if ! command -v pipe >/dev/null 2>&1; then
@@ -150,6 +153,7 @@ install_pipe() {
         return 1
     fi
     echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
+}
 
 install_node() {
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
@@ -230,9 +234,11 @@ auto_claim_faucet() {
 import requests
 import time
 import uuid
+
 RPC_URL = "https://api.devnet.solana.com"
 LAMPORTS_PER_SOL = 1_000_000_000
 DEFAULT_SOL = 5
+
 def rpc(method: str, params):
     payload = {
         "jsonrpc": "2.0",
@@ -249,9 +255,11 @@ def rpc(method: str, params):
         return data["result"]
     except requests.RequestException as e:
         raise RuntimeError("Network error: " + str(e))
+
 def request_airdrop(pubkey: str, sol: float = DEFAULT_SOL) -> str:
     lamports = int(sol * LAMPORTS_PER_SOL)
     return rpc("requestAirdrop", [pubkey, lamports])
+
 def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
     start = time.time()
     while time.time() - start < timeout_s:
@@ -264,6 +272,7 @@ def wait_for_confirmation(signature: str, timeout_s: int = 45) -> bool:
             pass
         time.sleep(1.2)
     return False
+
 def main(pubkey: str):
     try:
         print(f"Requesting airdrop of {DEFAULT_SOL} SOL to {pubkey} ...")
@@ -281,6 +290,7 @@ def main(pubkey: str):
         return False, str(e)
     except Exception as e:
         raise RuntimeError("Network error: " + str(e))
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
@@ -647,6 +657,7 @@ check_token_usage() {
     return_to_menu
 }
 
+# Write video_downloader.py
 cat << 'EOF' > video_downloader.py
 import yt_dlp
 import os
@@ -661,19 +672,24 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
+
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
+
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
+
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
+
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
         print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
@@ -699,6 +715,7 @@ def concatenate_with_moviepy(files, output_file):
     except Exception as e:
         print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
+
 def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1024*1024, min_filesize=50*1024*1024):
     ydl_opts = {
         'format': 'best',
@@ -782,6 +799,7 @@ def download_videos(query, output_file, target_size_mb=1000, max_filesize=1100*1
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
+
 def progress_hook(d):
     if d['status'] == 'downloading':
         downloaded = d.get('downloaded_bytes', 0)
@@ -793,6 +811,7 @@ def progress_hook(d):
               f"Speed: {speed/(1024*1024):.2f} MB/s ETA: {format_time(eta)}", end='')
     elif d['status'] == 'finished':
         print("\r✅ File Download completed")
+
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
@@ -800,6 +819,7 @@ if __name__ == "__main__":
         print("Please provide a search query and output filename.")
 EOF
 
+# Write pixabay_downloader.py
 cat << 'EOF' > pixabay_downloader.py
 import requests
 import os
@@ -814,19 +834,24 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
+
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
+
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
+
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
+
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
         print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
@@ -852,6 +877,7 @@ def concatenate_with_moviepy(files, output_file):
     except Exception as e:
         print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
+
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pixabay_api_key')
     if not os.path.exists(api_key_file):
@@ -949,6 +975,7 @@ def download_videos(query, output_file, target_size_mb=1000):
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
+
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
@@ -956,6 +983,7 @@ if __name__ == "__main__":
         print("Please provide a search query and output filename.")
 EOF
 
+# Write pexels_downloader.py
 cat << 'EOF' > pexels_downloader.py
 import requests
 import os
@@ -970,19 +998,24 @@ try:
     MOVIEPY_AVAILABLE = True
 except ImportError:
     MOVIEPY_AVAILABLE = False
+
 def format_size(bytes_size):
     return f"{bytes_size/(1024*1024):.2f} MB"
+
 def format_time(seconds):
     mins = int(seconds // 60)
     secs = int(seconds % 60)
     return f"{mins:02d}:{secs:02d}"
+
 def draw_progress_bar(progress, total, width=50):
     percent = progress / total * 100
     filled = int(width * progress // total)
     bar = '█' * filled + '-' * (width - filled)
     return f"[{bar}] {percent:.1f}%"
+
 def check_ffmpeg():
     return shutil.which("ffmpeg") is not None
+
 def concatenate_with_moviepy(files, output_file):
     if not MOVIEPY_AVAILABLE:
         print("⚠️ moviepy is not installed. Cannot concatenate with moviepy.")
@@ -1008,6 +1041,7 @@ def concatenate_with_moviepy(files, output_file):
     except Exception as e:
         print(f"⚠️ Moviepy concatenation failed: {str(e)}")
         return False
+
 def download_videos(query, output_file, target_size_mb=1000):
     api_key_file = os.path.expanduser('~/.pexels_api_key')
     if not os.path.exists(api_key_file):
@@ -1111,11 +1145,13 @@ def download_videos(query, output_file, target_size_mb=1000):
                 os.remove(fn)
         if os.path.exists('list.txt'):
             os.remove('list.txt')
+
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         download_videos(sys.argv[1], sys.argv[2])
     else:
         print("Please provide a search query and output filename.")
+EOF
 
 while true; do
     show_header
