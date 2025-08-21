@@ -615,14 +615,6 @@ show_referral() {
 }
 
 swap_tokens() {
-    if [ -z "$SOLANA_PUBKEY" ]; then
-        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json" 2>/dev/null)
-        if [ "$SOLANA_PUBKEY" = "Not found" ]; then
-            echo -e "${RED}❌ Solana Public Key not found. Please run 'Install Node' first.${NC}"
-            return_to_menu
-            return
-        fi
-    fi
     echo -e "${BLUE}🔥 PIPE Swapping Menu${NC}"
     read -p "Enter amount to swap (default 2 SOL): " AMOUNT
     AMOUNT=${AMOUNT:-2}
