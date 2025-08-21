@@ -440,12 +440,14 @@ upload_file() {
                 # Prompt for API key if file doesn't exist
                 if [ ! -f "$API_KEY_FILE" ]; then
                     echo -e "${YELLOW}⚠️ Pixabay API key not found. Please provide a valid API key.${NC}"
-                    read -p "$(echo -e Enter your Pixabay API key: )" api_key
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
-                        return_to_menu
-                        continue
-                    fi
+                    while true; do
+                        read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                            break
+                        else
+                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                        fi
+                    done
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ Pixabay API key saved to $API_KEY_FILE.${NC}"
                 fi
@@ -459,12 +461,14 @@ upload_file() {
                     echo -e "${YELLOW}⚠️ Invalid Pixabay API key detected. Deleting $API_KEY_FILE...${NC}"
                     rm -f "$API_KEY_FILE" 2>/dev/null
                     echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
-                    read -p "$(echo -e Enter your Pixabay API key: )" api_key
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
-                        return_to_menu
-                        continue
-                    fi
+                    while true; do
+                        read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                            break
+                        else
+                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                        fi
+                    done
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ New Pixabay API key saved to $API_KEY_FILE. Retrying download...${NC}"
                     python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
@@ -484,12 +488,14 @@ upload_file() {
                 # Prompt for API key if file doesn't exist
                 if [ ! -f "$API_KEY_FILE" ]; then
                     echo -e "${YELLOW}⚠️ Pexels API key not found. Please provide a valid API key.${NC}"
-                    read -p "$(echo -e Enter your Pexels API key: )" api_key
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
-                        return_to_menu
-                        continue
-                    fi
+                    while true; do
+                        read -p "$(echo -e Enter your Pexels API key: )" api_key
+                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                            break
+                        else
+                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                        fi
+                    done
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ Pexels API key saved to $API_KEY_FILE.${NC}"
                 fi
@@ -503,12 +509,14 @@ upload_file() {
                     echo -e "${YELLOW}⚠️ Invalid Pexels API key detected. Deleting $API_KEY_FILE...${NC}"
                     rm -f "$API_KEY_FILE" 2>/dev/null
                     echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
-                    read -p "$(echo -e Enter your Pexels API key: )" api_key
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
-                        return_to_menu
-                        continue
-                    fi
+                    while true; do
+                        read -p "$(echo -e Enter your Pexels API key: )" api_key
+                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                            break
+                        else
+                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                        fi
+                    done
                     echo "$api_key" > "$API_KEY_FILE"
                     echo -e "${GREEN}✅ New Pexels API key saved to $API_KEY_FILE. Retrying download...${NC}"
                     python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
