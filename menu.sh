@@ -309,7 +309,7 @@ EOF
         fi
     fi
     retries=0
-    max_retries=3
+    max_retries=5
     while [ $retries -lt $max_retries ]; do
         attempt=$((retries+1))
         echo -e "${BLUE}💰 Attempting to claim 5 Devnet SOL (Attempt ${attempt}/${max_retries})...${NC}"
