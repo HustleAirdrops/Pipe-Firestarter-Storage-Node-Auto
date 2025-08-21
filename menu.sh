@@ -428,10 +428,7 @@ upload_file() {
                 ;;
             pixabay)
                 API_KEY_FILE="$HOME/.pixabay_api_key"
-                if [ ! -f "$API_KEY_FILE" ]; then
-                    echo "pexels: iur1f5KGwvSIR1xr8I1t3KR3NP88wFXeCyV12ibHnioNXQYTy95KhE69" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ Default Pixabay API key set.${NC}"
-                fi
+          
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
@@ -441,7 +438,7 @@ upload_file() {
             pexels)
                 API_KEY_FILE="$HOME/.pexels_api_key"
                 if [ ! -f "$API_KEY_FILE" ]; then
-                    echo "51848865-07253475f9fc0309b02c38a39" > "$API_KEY_FILE"
+                 
                     echo -e "${GREEN}✅ Default Pexels API key set.${NC}"
                 fi
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
