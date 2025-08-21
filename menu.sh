@@ -142,7 +142,6 @@ install_pipe() {
         echo -e "${RED}❌ Failed to install Pipe!${NC}"
         cd "$HOME"
         return 1
-    }
     cd "$HOME"
     setup_pipe_path
     if ! command -v pipe >/dev/null 2>&1; then
