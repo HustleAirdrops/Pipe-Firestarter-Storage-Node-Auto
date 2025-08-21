@@ -337,6 +337,7 @@ EOF
 }
 
 perform_swap() {
+    setup_pipe_path
     retries=0
     max_retries=3
     while [ $retries -lt $max_retries ]; do
