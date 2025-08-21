@@ -142,7 +142,7 @@ install_pipe() {
         echo -e "${RED}❌ Failed to install Pipe!${NC}"
         cd "$HOME"
         return 1
-    }
+        
     cd "$HOME"
     setup_pipe_path
     if ! command -v pipe >/dev/null 2>&1; then
@@ -150,7 +150,6 @@ install_pipe() {
         return 1
     fi
     echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
-}
 
 install_node() {
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
