@@ -142,6 +142,7 @@ install_pipe() {
         echo -e "${RED}❌ Failed to install Pipe!${NC}"
         cd "$HOME"
         return 1
+    }
     cd "$HOME"
     setup_pipe_path
     if ! command -v pipe >/dev/null 2>&1; then
@@ -149,6 +150,7 @@ install_pipe() {
         return 1
     fi
     echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
+}
 
 install_node() {
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
@@ -221,11 +223,14 @@ install_node() {
     echo -e "${BLUE}✅ Applying referral code...${NC}"
     pipe referral apply "$referral_code" || echo -e "${YELLOW}⚠️ Failed to apply referral code. Continuing...${NC}"
     pipe referral generate >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ Failed to generate referral code. Continuing...${NC}"
+}
 
 auto_claim_faucet() {
     cat << 'EOF' > solana_airdrop.py
 #!/usr/bin/env python3
-import requests, time, uuid
+import requests
+import time
+import uuid
 RPC_URL = "https://api.devnet.solana.com"
 LAMPORTS_PER_SOL = 1_000_000_000
 DEFAULT_SOL = 5
@@ -320,6 +325,7 @@ EOF
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
         exit 1
     fi
+}
 
 perform_swap() {
     if [ -z "$SOLANA_PUBKEY" ]; then
@@ -350,6 +356,7 @@ perform_swap() {
     done
     echo -e "${RED}❌ Swap failed after $max_retries attempts. Please try again later or check your SOL balance at https://faucet.solana.com/.${NC}"
     return_to_menu
+}
 
 upload_file() {
     VENV_DIR="$HOME/pipe_venv"
