@@ -8,7 +8,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# Initialize variables
+# Initialize variables AAAAA
 CTRL_C_COUNT=0
 IN_MENU=0
 SOLANA_PUBKEY=""
@@ -428,24 +428,91 @@ upload_file() {
                 ;;
             pixabay)
                 API_KEY_FILE="$HOME/.pixabay_api_key"
-          
+                # Check if API key file exists and validate the key
+                if [ -f "$API_KEY_FILE" ]; then
+                    api_key=$(cat "$API_KEY_FILE")
+                    # Validate API key (basic check for non-empty and reasonable length)
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${YELLOW}⚠️ Invalid or empty Pixabay API key found in $API_KEY_FILE.${NC}"
+                        rm -f "$API_KEY_FILE" 2>/dev/null
+                    fi
+                fi
+                # Prompt for API key if file doesn't exist
+                if [ ! -f "$API_KEY_FILE" ]; then
+                    echo -e "${YELLOW}⚠️ Pixabay API key not found. Please provide a valid API key.${NC}"
+                    read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
+                        return_to_menu
+                        continue
+                    fi
+                    echo "$api_key" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ Pixabay API key saved to $API_KEY_FILE.${NC}"
+                fi
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
                 python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                # Check if download failed due to invalid API key
+                if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
+                    echo -e "${YELLOW}⚠️ Invalid Pixabay API key detected. Deleting $API_KEY_FILE...${NC}"
+                    rm -f "$API_KEY_FILE" 2>/dev/null
+                    echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
+                    read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
+                        return_to_menu
+                        continue
+                    fi
+                    echo "$api_key" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ New Pixabay API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                    python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                fi
                 ;;
             pexels)
                 API_KEY_FILE="$HOME/.pexels_api_key"
+                # Check if API key file exists and validate the key
+                if [ -f "$API_KEY_FILE" ]; then
+                    api_key=$(cat "$API_KEY_FILE")
+                    # Validate API key (basic check for non-empty and reasonable length)
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${YELLOW}⚠️ Invalid or empty Pexels API key found in $API_KEY_FILE.${NC}"
+                        rm -f "$API_KEY_FILE" 2>/dev/null
+                    fi
+                fi
+                # Prompt for API key if file doesn't exist
                 if [ ! -f "$API_KEY_FILE" ]; then
-                 
-                    echo -e "${GREEN}✅ Default Pexels API key set.${NC}"
+                    echo -e "${YELLOW}⚠️ Pexels API key not found. Please provide a valid API key.${NC}"
+                    read -p "$(echo -e Enter your Pexels API key: )" api_key
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
+                        return_to_menu
+                        continue
+                    fi
+                    echo "$api_key" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ Pexels API key saved to $API_KEY_FILE.${NC}"
                 fi
                 read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
                 echo -e "${BLUE}📥 Downloading video from Pexels...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
                 python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                # Check if download failed due to invalid API key
+                if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
+                    echo -e "${YELLOW}⚠️ Invalid Pexels API key detected. Deleting $API_KEY_FILE...${NC}"
+                    rm -f "$API_KEY_FILE" 2>/dev/null
+                    echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
+                    read -p "$(echo -e Enter your Pexels API key: )" api_key
+                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                        echo -e "${RED}❌ Invalid API key provided. Returning to menu...${NC}"
+                        return_to_menu
+                        continue
+                    fi
+                    echo "$api_key" > "$API_KEY_FILE"
+                    echo -e "${GREEN}✅ New Pexels API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                    python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                fi
                 ;;
             manual)
                 echo -e "${BLUE}🔍 Searching for .mp4 files in $HOME and $HOME/pipe...${NC}"
