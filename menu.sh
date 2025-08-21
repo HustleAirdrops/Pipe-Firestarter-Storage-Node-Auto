@@ -348,7 +348,7 @@ perform_swap() {
         if [ $? -eq 0 ]; then
             echo "$swap_output"
             echo -e "${GREEN}✅ Swap successful.${NC}"
-            return 0
+            return_to_menu
         else
             echo -e "${YELLOW}⚠️ Failed to swap SOL for PIPE: $swap_output${NC}"
             retries=$((retries+1))
