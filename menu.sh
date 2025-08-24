@@ -8,10 +8,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# Initialize variables AAAAA
+# Initialize variables
 CTRL_C_COUNT=0
 IN_MENU=0
-SOLANA_PUBKEY=""
 LOG_DIR="$HOME/pipe_logs"
 LOG_FILE="$LOG_DIR/pipe_manager_$(date +%Y%m%d_%H%M%S).log"
 
@@ -27,16 +26,16 @@ show_header() {
     clear
     echo -e "${BLUE}${BOLD}"
     echo "┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐"
-    echo "│ ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗ │"
-    echo "│ ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝ │"
-    echo "│ ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░ │"
-    echo "│ ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗ │"
-    echo "│ ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝ │"
-    echo "│ ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░ │"
+    echo "│ ██╗░░██╗██╗░░░██║░██████╗████████╗██╗░░░░░███████╗  ░█████╗░██╗██████╗░██████╗░██████╗░░█████╗░██████╗░░██████╗   │"
+    echo "│ ██║░░██║██║░░░██║██╔════╝╚══██╔══╝██║░░░░░██╔════╝  ██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝   │"
+    echo "│ ███████║██║░░░██║╚█████╗░░░░██║░░░██║░░░░░█████╗░░  ███████║██║██████╔╝██║░░██║██████╔╝██║░░██║██████╔╝╚█████╗░   │"
+    echo "│ ██╔══██║██║░░░██║░╚═══██╗░░░██║░░░██║░░░░░██╔══╝░░  ██╔══██║██║██╔══██╗██║░░██║██╔══██╗██║░░██║██╔═══╝░░╚═══██╗   │"
+    echo "│ ██║░░██║╚██████╔╝██████╔╝░░░██║░░░███████╗███████╗  ██║░░██║██║██║░░██║██████╔╝██║░░██║╚█████╔╝██║░░░░░██████╔╝   │"
+    echo "│ ╚═╝░░╚═╝░╚═════╝░╚═════╝░░░░╚═╝░░░╚══════╝╚══════╝  ╚═╝░░╚═╝╚═╝╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═════╝░   │"
     echo "└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘"
-    echo -e "${YELLOW} 🚀 Pipe Node Manager by Aashish 🚀${NC}"
-    echo -e "${YELLOW} GitHub: https://github.com/HustleAirdrops${NC}"
-    echo -e "${YELLOW} Telegram: https://t.me/Hustle_Airdrops${NC}"
+    echo -e "${YELLOW}                🚀 Pipe Node Manager by Aashish 🚀${NC}"
+    echo -e "${YELLOW}             GitHub: https://github.com/HustleAirdrops${NC}"
+    echo -e "${YELLOW}               Telegram: https://t.me/Hustle_Airdrops${NC}"
     echo -e "${GREEN}===============================================================================${NC}"
 }
 
@@ -104,18 +103,21 @@ setup_venv() {
     deactivate
 }
 
+check_pipe() {
+    if ! command -v pipe >/dev/null 2>&1; then
+        setup_pipe_path
+    fi
+}
+
 setup_pipe_path() {
     if [ -f "$HOME/.cargo/bin/pipe" ]; then
         if ! grep -q "export PATH=\$HOME/.cargo/bin:\$PATH" ~/.bashrc; then
             echo 'export PATH=$HOME/.cargo/bin:$PATH' >> ~/.bashrc
-            echo -e "${GREEN}✅ Added pipe path to ~/.bashrc.${NC}"
         fi
         export PATH=$HOME/.cargo/bin:$PATH
         source "$HOME/.cargo/env" 2>/dev/null
         chmod +x "$HOME/.cargo/bin/pipe" 2>/dev/null
-        echo -e "${GREEN}✅ Pipe path configured and executable ensured.${NC}"
     else
-        echo -e "${YELLOW}⚠️ Pipe binary not found. Triggering installation...${NC}"
         install_pipe
     fi
 }
@@ -154,8 +156,8 @@ install_pipe() {
     fi
     echo -e "${GREEN}✅ Pipe installed successfully!${NC}"
 }
-
-install_node() {
+fresh_install_node() {
+    check_pipe
     echo -e "${BLUE}🔍 Checking if Pipe is already installed...${NC}"
     if command -v pipe >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Pipe is already installed! Checking configuration...${NC}"
@@ -188,9 +190,20 @@ install_node() {
     fi
     setup_venv
     if [ -f "$HOME/.pipe-cli.json" ]; then
-        echo -e "${YELLOW}⚠️ Existing Pipe configuration found. Skipping user creation...${NC}"
-        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json")
-        return
+        read -p "$(echo -e ${YELLOW}⚠️ Existing Pipe configuration found. Overwrite? \(y/n\): ${NC})" overwrite_confirm
+        if [ "$overwrite_confirm" != "y" ] && [ "$overwrite_confirm" != "Y" ]; then
+            echo -e "${YELLOW}⚠️ Skipping fresh install to avoid overwriting existing config.${NC}"
+            if [ -f "$HOME/.pipe-solana-key.json" ]; then
+                SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-solana-key.json")
+            else
+                SOLANA_PUBKEY="Not found"
+            fi
+            return_to_menu
+            return
+        else
+            cp "$HOME/.pipe-cli.json" "$HOME/.pipe-cli.json.bak" 2>/dev/null
+            echo -e "${GREEN}✅ Backup of config created at ~/.pipe-cli.json.bak${NC}"
+        fi
     fi
     read -r -p "$(echo -e 👤 Enter your desired username: )" username
     echo -e "${BLUE}🆕 Creating new user...${NC}"
@@ -204,20 +217,29 @@ install_node() {
     echo "$pipe_output"
     SOLANA_PUBKEY=$(echo "$pipe_output" | grep "Solana Pubkey" | awk '{print $NF}')
     echo -e "${GREEN}🔑 Your Solana Public Key: $SOLANA_PUBKEY${NC}"
-    if [ -n "$SOLANA_PUBKEY" ] && [ -f "$HOME/.pipe-cli.json" ]; then
-        jq --arg sp "$SOLANA_PUBKEY" '. + {solana_pubkey: $sp}' "$HOME/.pipe-cli.json" > tmp.json && mv tmp.json "$HOME/.pipe-cli.json"
+    if [ -n "$SOLANA_PUBKEY" ]; then
+        # Save Solana public key to .pipe-solana-key.json
+        jq -n --arg sp "$SOLANA_PUBKEY" '{solana_pubkey: $sp}' > "$HOME/.pipe-solana-key.json"
         if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-cli.json${NC}"
+            echo -e "${GREEN}✅ Solana Public Key saved to ~/.pipe-solana-key.json${NC}"
+            chmod 600 "$HOME/.pipe-solana-key.json" 2>/dev/null
+            cp "$HOME/.pipe-solana-key.json" "$HOME/.pipe-solana-key.json.bak" 2>/dev/null
+            echo -e "${GREEN}✅ Backup created at ~/.pipe-solana-key.json.bak${NC}"
         else
-            echo -e "${RED}❌ Failed to save Solana Public Key to ~/.pipe-cli.json${NC}"
+            echo -e "${RED}❌ Failed to save Solana Public Key to ~/.pipe-solana-key.json${NC}"
         fi
     else
-        echo -e "${RED}❌ Could not save Solana Public Key: File or key not found.${NC}"
+        echo -e "${RED}❌ Could not save Solana Public Key: Key not found.${NC}"
     fi
-    echo -e "${BLUE}💾 Your credentials are below. Copy and save them, then press Enter to continue:${NC}"
-    cat "$HOME/.pipe-cli.json" 2>/dev/null || echo -e "${RED}❌ Failed to display credentials file.${NC}"
-    read -s -p "Press Enter after saving your credentials..."
-    clear
+    if [ -f "$HOME/.pipe-cli.json" ]; then
+        echo -e "${BLUE}💾 Your credentials are below. Copy and save them, then press Enter to continue:${NC}"
+        cat "$HOME/.pipe-cli.json" 2>/dev/null || echo -e "${RED}❌ Failed to display credentials file.${NC}"
+        echo -e "\n"
+        read -s -p "Press Enter after saving your credentials..."
+        clear
+    else
+        echo -e "${RED}❌ Credentials file (~/.pipe-cli.json) not found.${NC}"
+    fi
     read -p "$(echo -e 🔗 Enter a referral code \(or press Enter to use my refer code 🥹\):)" referral_code
     if [ -z "$referral_code" ]; then
         referral_code="ITZMEAAS-PFJU"
@@ -226,6 +248,80 @@ install_node() {
     echo -e "${BLUE}✅ Applying referral code...${NC}"
     pipe referral apply "$referral_code" || echo -e "${YELLOW}⚠️ Failed to apply referral code. Continuing...${NC}"
     pipe referral generate >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ Failed to generate referral code. Continuing...${NC}"
+
+    auto_claim_faucet
+    perform_swap
+}
+
+import_old_account() {
+    if [ -f "$HOME/.pipe-cli.json" ]; then
+        read -p "$(echo -e ${YELLOW}⚠️ Existing Pipe configuration found. Overwrite with imported data? \(y/n\): ${NC})" overwrite_confirm
+        if [ "$overwrite_confirm" != "y" ] && [ "$overwrite_confirm" != "Y" ]; then
+            echo -e "${YELLOW}⚠️ Skipping import to avoid overwriting existing config.${NC}"
+            return_to_menu
+            return
+        else
+            cp "$HOME/.pipe-cli.json" "$HOME/.pipe-cli.json.bak" 2>/dev/null
+            echo -e "${GREEN}✅ Backup of config created at ~/.pipe-cli.json.bak${NC}"
+        fi
+    fi
+    echo -e "${BLUE}📥 Importing old account. Please provide the following details:${NC}"
+    read -p "👤 Username: " username
+    read -p "🆔 User ID: " user_id
+    read -p "🔐 User App Key: " user_app_key
+    read -p "🔑 Solana Public Key: " solana_pubkey
+    read -p "🔑 Access Token: " access_token
+    read -p "🔄 Refresh Token: " refresh_token
+    read -p "📜 Token Type (e.g., Bearer): " token_type
+    read -p "⏳ Expires In (seconds): " expires_in
+    read -p "📅 Expires At (timestamp): " expires_at
+    if [ -z "$username" ] || [ -z "$user_id" ] || [ -z "$user_app_key" ] || [ -z "$solana_pubkey" ] || [ -z "$access_token" ] || [ -z "$refresh_token" ] || [ -z "$token_type" ] || [ -z "$expires_in" ] || [ -z "$expires_at" ]; then
+        echo -e "${RED}❌ All fields are required. Import aborted.${NC}"
+        return_to_menu
+        return
+    fi
+    jq -n --arg sp "$solana_pubkey" '{solana_pubkey: $sp}' > "$HOME/.pipe-solana-key.json"
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Solana public key saved to ~/.pipe-solana-key.json${NC}"
+        chmod 600 "$HOME/.pipe-solana-key.json" 2>/dev/null
+    else
+        echo -e "${RED}❌ Failed to save Solana public key.${NC}"
+        return_to_menu
+        return
+    fi
+    jq -n --arg un "$username" --arg uid "$user_id" --arg uak "$user_app_key" \
+          --arg at "$access_token" --arg rt "$refresh_token" --arg tt "$token_type" --arg ei "$expires_in" --arg ea "$expires_at" \
+          '{username: $un, user_id: $uid, user_app_key: $uak, auth_tokens: {access_token: $at, refresh_token: $rt, token_type: $tt, expires_in: $ei | tonumber, expires_at: $ea}}' > "$HOME/.pipe-cli.json"
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Imported account saved to ~/.pipe-cli.json${NC}"
+        cp "$HOME/.pipe-cli.json" "$HOME/.pipe-cli.json.bak" 2>/dev/null
+        echo -e "${GREEN}✅ Backup created at ~/.pipe-cli.json.bak${NC}"
+        SOLANA_PUBKEY="$solana_pubkey"
+    else
+        echo -e "${RED}❌ Failed to save imported account.${NC}"
+    fi
+
+    auto_claim_faucet
+    perform_swap
+}
+
+install_node() {
+    while true; do
+        clear
+        show_header
+        echo -e "${BLUE}${BOLD}======================= Install Node Submenu =======================${NC}"
+        echo -e "${YELLOW}1. 🆕 Fresh Install${NC}"
+        echo -e "${YELLOW}2. 📥 Import Old Account${NC}"
+        echo -e "${YELLOW}3. 🔙 Back to Main Menu${NC}"
+        echo -e "${BLUE}=================================================================${NC}"
+        read -p "$(echo -e Select an option: )" subchoice
+        case $subchoice in
+            1) fresh_install_node ;;
+            2) import_old_account ;;
+            3) return_to_menu; return ;;
+            *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
+        esac
+    done
 }
 
 auto_claim_faucet() {
@@ -301,7 +397,7 @@ if __name__ == "__main__":
 EOF
     chmod +x solana_airdrop.py
     if [ -z "$SOLANA_PUBKEY" ]; then
-        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json" 2>/dev/null)
+        SOLANA_PUBKEY=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-solana-key.json" 2>/dev/null)
         if [ "$SOLANA_PUBKEY" = "Not found" ]; then
             echo -e "${RED}❌ Solana Public Key not found. Please run 'Install Node' first.${NC}"
             return_to_menu
@@ -319,6 +415,7 @@ EOF
         if [ $success -eq 1 ]; then
             echo -e "${GREEN}✅ Airdrop successful. Tx: $message${NC}"
             rm -f solana_airdrop.py
+            return_to_menu
             return 0
         else
             echo -e "${YELLOW}⚠️ Airdrop failed: $message${NC}"
@@ -334,10 +431,11 @@ EOF
         echo -e "${RED}❌ SOL not claimed. Exiting.${NC}"
         exit 1
     fi
+    return_to_menu
 }
 
 perform_swap() {
-    setup_pipe_path
+    check_pipe
     retries=0
     max_retries=3
     while [ $retries -lt $max_retries ]; do
@@ -350,6 +448,7 @@ perform_swap() {
             echo "$swap_output"
             echo -e "${GREEN}✅ Swap successful.${NC}"
             return_to_menu
+            return
         else
             echo -e "${YELLOW}⚠️ Failed to swap SOL for PIPE: $swap_output${NC}"
             retries=$((retries+1))
@@ -357,10 +456,10 @@ perform_swap() {
         fi
     done
     echo -e "${RED}❌ Swap failed after $max_retries attempts. Please try again later or check your SOL balance at https://faucet.solana.com/.${NC}"
-    return_to_menu
 }
 
 upload_file() {
+    check_pipe
     VENV_DIR="$HOME/pipe_venv"
     if [ ! -d "$VENV_DIR" ]; then
         setup_venv
@@ -381,19 +480,6 @@ upload_file() {
             echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
         fi
     fi
-    if ! command -v pipe >/dev/null 2>&1; then
-        setup_pipe_path
-        if ! command -v pipe >/dev/null 2>&1; then
-            echo -e "${RED}❌ Pipe command not found. Attempting to install...${NC}"
-            install_pipe
-            if ! command -v pipe >/dev/null 2>&1; then
-                echo -e "${RED}❌ Pipe installation failed. Please check logs in $LOG_FILE.${NC}"
-                deactivate
-                return_to_menu
-                return
-            fi
-        fi
-    fi
     while true; do
         clear
         show_header
@@ -411,6 +497,7 @@ upload_file() {
         read -p "$(echo -e Select an option: )" subchoice
         if [ "$subchoice" -eq $(( ${#available_sources[@]} + 1 )) ]; then
             deactivate
+            return_to_menu
             return
         fi
         if [[ ! "$subchoice" =~ ^[0-9]+$ ]] || [ "$subchoice" -lt 1 ] || [ "$subchoice" -gt ${#available_sources[@]} ]; then
@@ -429,16 +516,13 @@ upload_file() {
                 ;;
             pixabay)
                 API_KEY_FILE="$HOME/.pixabay_api_key"
-                # Check if API key file exists and validate the key
                 if [ -f "$API_KEY_FILE" ]; then
                     api_key=$(cat "$API_KEY_FILE")
-                    # Validate API key (basic check for non-empty and reasonable length)
                     if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
                         echo -e "${YELLOW}⚠️ Invalid or empty Pixabay API key found in $API_KEY_FILE.${NC}"
                         rm -f "$API_KEY_FILE" 2>/dev/null
                     fi
                 fi
-                # Prompt for API key if file doesn't exist
                 if [ ! -f "$API_KEY_FILE" ]; then
                     echo -e "${YELLOW}⚠️ Pixabay API key not found. Please provide a valid API key.${NC}"
                     while true; do
@@ -457,7 +541,6 @@ upload_file() {
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
                 python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                # Check if download failed due to invalid API key
                 if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
                     echo -e "${YELLOW}⚠️ Invalid Pixabay API key detected. Deleting $API_KEY_FILE...${NC}"
                     rm -f "$API_KEY_FILE" 2>/dev/null
@@ -477,16 +560,13 @@ upload_file() {
                 ;;
             pexels)
                 API_KEY_FILE="$HOME/.pexels_api_key"
-                # Check if API key file exists and validate the key
                 if [ -f "$API_KEY_FILE" ]; then
                     api_key=$(cat "$API_KEY_FILE")
-                    # Validate API key (basic check for non-empty and reasonable length)
                     if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
                         echo -e "${YELLOW}⚠️ Invalid or empty Pexels API key found in $API_KEY_FILE.${NC}"
                         rm -f "$API_KEY_FILE" 2>/dev/null
                     fi
                 fi
-                # Prompt for API key if file doesn't exist
                 if [ ! -f "$API_KEY_FILE" ]; then
                     echo -e "${YELLOW}⚠️ Pexels API key not found. Please provide a valid API key.${NC}"
                     while true; do
@@ -505,7 +585,6 @@ upload_file() {
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
                 python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                # Check if download failed due to invalid API key
                 if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
                     echo -e "${YELLOW}⚠️ Invalid Pexels API key detected. Deleting $API_KEY_FILE...${NC}"
                     rm -f "$API_KEY_FILE" 2>/dev/null
@@ -650,15 +729,22 @@ show_credentials() {
         token_type=$(jq -r '.auth_tokens.token_type // "Not found"' "$HOME/.pipe-cli.json")
         expires_in=$(jq -r '.auth_tokens.expires_in // "Not found"' "$HOME/.pipe-cli.json")
         expires_at=$(jq -r '.auth_tokens.expires_at // "Not found"' "$HOME/.pipe-cli.json")
-        solana_pubkey=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-cli.json")
+        if [ -f "$HOME/.pipe-solana-key.json" ]; then
+            solana_pubkey=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-solana-key.json")
+        else
+            solana_pubkey="Not found"
+        fi
         read -p "$(echo -e ${YELLOW}🔍 Show full Access and Refresh Tokens? \(y/n, default n\): ${NC})" show_full
         echo -e "${YELLOW}👤 Username: ${GREEN}$username${NC}"
         echo -e "${YELLOW}🆔 User ID: ${GREEN}$user_id${NC}"
         echo -e "${YELLOW}🔐 User App Key: ${GREEN}$user_app_key${NC}"
         echo -e "${YELLOW}🔑 Solana Public Key: ${GREEN}$solana_pubkey${NC}"
-        echo -e "${YELLOW}🔒 Auth Tokens:${NC}"
         echo -e "${YELLOW}📜 Token Type: ${GREEN}$token_type${NC}"
-        echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
+        if [ "$expires_in" != "Not found" ]; then
+            echo -e "${YELLOW}⏳ Expires In: ${GREEN}$expires_in seconds${NC}"
+        else
+            echo -e "${YELLOW}⏳ Expires In: ${GREEN}Not found${NC}"
+        fi
         echo -e "${YELLOW}📅 Expires At: ${GREEN}$expires_at${NC}"
         if [ "$show_full" = "y" ] || [ "$show_full" = "Y" ]; then
             echo -e "${YELLOW}🔑 Access Token: ${GREEN}$access_token${NC}"
@@ -669,17 +755,26 @@ show_credentials() {
         fi
     else
         echo -e "${YELLOW}⚠️ Credentials file (~/.pipe-cli.json) not found.${NC}"
+        if [ -f "$HOME/.pipe-solana-key.json" ]; then
+            solana_pubkey=$(jq -r '.solana_pubkey // "Not found"' "$HOME/.pipe-solana-key.json")
+            echo -e "${YELLOW}🔑 Solana Public Key: ${GREEN}$solana_pubkey${NC}"
+        else
+            echo -e "${YELLOW}🔑 Solana Public Key: ${GREEN}Not found${NC}"
+        fi
     fi
     return_to_menu
 }
 
 show_referral() {
+    check_pipe
+    pipe referral generate >/dev/null 2>&1
     echo -e "${BLUE}📊 Your referral stats:${NC}"
     pipe referral show 2>&1 | tee -a "$LOG_FILE" || echo -e "${YELLOW}⚠️ Failed to retrieve referral stats.${NC}"
     return_to_menu
 }
 
 swap_tokens() {
+    check_pipe
     echo -e "${BLUE}🔥 PIPE Swapping Menu${NC}"
     read -p "Enter amount to swap (default 2 SOL): " AMOUNT
     AMOUNT=${AMOUNT:-2}
@@ -696,7 +791,8 @@ swap_tokens() {
         swap_output=$(pipe swap-sol-for-pipe "$AMOUNT" 2>&1)
         if [ $? -eq 0 ]; then
             echo "$swap_output" | tee -a "$LOG_FILE"
-            echo -e "${GREEN}✅ Successfully swapped $AMOUNT SOL for PIPE!${NC}"
+            echo -e "${GREEN}✅ Successfully swapped $AMOUNT SOL for PIPE! ${NC}"
+            return_to_menu
             return 0
         else
             echo -e "${YELLOW}⚠️ Swap failed: $swap_output${NC}"
@@ -709,9 +805,14 @@ swap_tokens() {
 }
 
 check_token_usage() {
+    check_pipe
     echo -e "${BLUE}📈 Checking token usage...${NC}"
     pipe token-usage 2>&1 | tee -a "$LOG_FILE" || echo -e "${YELLOW}⚠️ Failed to check token usage.${NC}"
     return_to_menu
+}
+
+claim_faucet() {
+    auto_claim_faucet
 }
 
 # Write video_downloader.py
@@ -1220,24 +1321,24 @@ while true; do
     echo -e "${YELLOW}5. 📈 Check Token Usage${NC}"
     echo -e "${YELLOW}6. 🔑 Show Credentials${NC}"
     echo -e "${YELLOW}7. 🔥 Swap Tokens${NC}"
-    echo -e "${YELLOW}8. ❌ Exit${NC}"
+    echo -e "${YELLOW}8. 💰 Claim Faucet${NC}"
+    echo -e "${YELLOW}9. ❌ Exit${NC}"
     echo -e "${BLUE}=============================================================================${NC}"
     IN_MENU=1
     read -p "$(echo -e Select an option: )" choice
     IN_MENU=0
     case $choice in
         1)
-           install_node
-           auto_claim_faucet
-           perform_swap
-           ;;
+            install_node
+            ;;
         2) upload_file ;;
         3) show_file_info ;;
         4) show_referral ;;
         5) check_token_usage ;;
         6) show_credentials ;;
         7) swap_tokens ;;
-        8) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
+        8) claim_faucet ;;
+        9) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
         *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
 done
