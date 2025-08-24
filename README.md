@@ -26,7 +26,8 @@ After running the command, you'll see a menu like this:
 5. 📈 Check Token Usage
 6. 🔑 Show Credentials
 7. 🔥 Swap tokens
-8. ❌ Exit
+8. 💰 Claim Faucet
+9. ❌ Exit
 ```
 
 ## 🧭 What Can You Do With the Menu?
@@ -39,8 +40,8 @@ The interactive menu makes everything simple. Here’s what each action lets you
 - **⬆️ Upload Video:**  
     Choose from four upload methods:
     - **YouTube:** Paste a YouTube link and the script downloads and uploads the video for you.
-    - **Pixabay:** Enter your Pixabay API key, search for a video, and upload it.
-    - **Pexels:** Enter your Pexels API key, search for a video, and upload it.
+    - **Pixabay:** Enter your [Pixabay API key](https://pixabay.com/api/docs/), search for a video, and upload it.
+    - **Pexels:** Enter your [Pexels API key](https://www.pexels.com/api/), search for a video, and upload it.
     - **Manual:** Select a video file from your computer and upload it.
 
 - **📄 Show Uploaded File Info:**  
@@ -58,6 +59,9 @@ The interactive menu makes everything simple. Here’s what each action lets you
 - **🔥 Swap Tokens:**  
     Swap your tokens directly from the menu.
 
+- **💰 Claim Faucet"**
+    Claim Faucet Automatically
+  
 - **❌ Exit:**  
     Quit the script safely.
 
