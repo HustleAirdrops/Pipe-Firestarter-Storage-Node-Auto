@@ -35,7 +35,9 @@ After running the command, you'll see a menu like this:
 The interactive menu makes everything simple. Here’s what each action lets you do:
 
 - **🛠️ Install Node:**  
-    Set up your storage node for the first time. Enter your username and password, save your credentials, and connect your Solana wallet. You’ll need some test SOL (get it [here](https://faucet.solana.com/)) to complete the setup.
+    Set up your storage node for the first time, or import an existing account!
+    - **New Setup:** Enter your username and password, save your credentials, and connect your Solana wallet. You’ll need some test SOL (get it [here](https://faucet.solana.com/)) to complete the setup.
+    - **Import:** Already have an account? Enter your credentials to import your previous node. 
 
 - **⬆️ Upload Video:**  
     Choose from four upload methods:
