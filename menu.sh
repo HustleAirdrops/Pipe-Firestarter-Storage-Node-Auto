@@ -481,6 +481,9 @@ upload_file() {
         fi
     fi
 
+    # List of random queries
+    query_list=("nature" "space" "ocean" "mountains" "forest" "cityscape" "animals" "birds" "cars" "technology" "abstract" "art" "music" "sports" "food" "random full hd video" "nature 1080p" "wildlife documentary" "urban exploration" "tech review" "sunrise" "sunset" "galaxy" "milky way" "desert" "rivers" "lakes" "waterfalls" "rainforest" "jungle" "tigers" "lions" "elephants" "deer" "wolves" "whales" "dolphins" "sharks" "butterflies" "eagles" "planes" "trains" "boats" "motorcycles" "trucks" "rock music" "classical music" "jazz" "hip hop" "concerts" "stadiums" "football" "basketball" "cricket" "tennis" "boxing" "mma" "swimming" "olympics" "marathons" "pizza" "burgers" "sushi" "pasta" "desserts" "cakes" "chocolate" "coffee" "tea" "street food" "robots" "ai" "gadgets" "smartphones" "drones" "space exploration" "rockets" "astronauts" "moon landing" "mars mission" "programming" "hacking" "cyberpunk" "virtual reality" "augmented reality" "future tech" "innovation" "startups" "engineering" "science" "painting" "sculpture" "digital art" "graffiti" "architecture" "design" "interior design" "fashion" "photography" "cinematography" "forests in autumn" "snow mountains" "alpine lakes" "glaciers" "volcanoes" "geysers" "caves" "underwater world" "deep sea" "coral reefs" "penguins" "polar bears" "kangaroos" "pandas" "koalas" "snakes" "frogs" "owls" "peacocks" "parrots" "rainy day" "storm" "lightning" "thunderstorm" "tornado" "hurricane" "earthquake" "tsunami" "northern lights" "eclipse" "stars" "planets" "black hole" "supernova" "asteroids" "comets" "meteors" "space station" "satellites" "telescopes" "city lights" "night city" "skyscrapers" "bridges" "highways" "subways" "street art" "markets" "festivals" "travel vlogs" "beaches" "islands" "tropical paradise" "safari" "camping" "hiking" "cycling" "adventure sports" "paragliding" "skydiving" "coding tutorials" "tech conferences" "robotics competitions" "esports" "gaming" "pc builds" "virtual concerts" "dance" "yoga" "meditation" "motivational speech" "history documentary" "ancient ruins" "castles" "temples" "churches" "mosques" "cultural festivals" "traditional food" "street music" "machine learning" "blockchain" "crypto" "bitcoin" "ethereum" "nfts" "defi" "smart contracts" "cloud computing" "data science")
+
     # Ask for number of uploads
     while true; do
         read -p "$(echo -e "${BLUE}How many files do you want to upload? (1-30): ${NC}")" num_uploads
@@ -494,125 +497,123 @@ upload_file() {
         sleep 1
     done
 
+    # Show submenu once
+    clear
+    show_header
+    echo -e "${BLUE}${BOLD}======================= Upload File Submenu =======================${NC}"
+    for i in "${!available_sources[@]}"; do
+        case ${available_sources[$i]} in
+            "youtube") echo -e "${YELLOW}$((i+1)). 📹 Upload from YouTube (yt-dlp)${NC}" ;;
+            "pixabay") echo -e "${YELLOW}$((i+1)). 🎥 Upload from Pixabay${NC}" ;;
+            "pexels") echo -e "${YELLOW}$((i+1)). 📽️ Upload from Pexels${NC}" ;;
+            "manual") echo -e "${YELLOW}$((i+1)). 🗂️ Manual Upload (from home or pipe folder)${NC}" ;;
+        esac
+    done
+    echo -e "${YELLOW}$(( ${#available_sources[@]} + 1 )). 🔙 Back to Main Menu${NC}"
+    echo -e "${BLUE}=================================================================${NC}"
+    read -p "$(echo -e Select an option: )" subchoice
+    if [ "$subchoice" -eq $(( ${#available_sources[@]} + 1 )) ]; then
+        deactivate
+        return
+    fi
+    if [[ ! "$subchoice" =~ ^[0-9]+$ ]] || [ "$subchoice" -lt 1 ] || [ "$subchoice" -gt ${#available_sources[@]} ]; then
+        echo -e "${RED}❌ Invalid option. Try again.${NC}"
+        sleep 1
+        deactivate
+        return
+    fi
+    source_type=${available_sources[$((subchoice-1))]}
+
     for ((upload_count=1; upload_count<=num_uploads; upload_count++)); do
-        clear
-        show_header
-        echo -e "${BLUE}${BOLD}======================= Upload File Submenu (Upload $upload_count of $num_uploads) =======================${NC}"
-        for i in "${!available_sources[@]}"; do
-            case ${available_sources[$i]} in
-                "youtube") echo -e "${YELLOW}$((i+1)). 📹 Upload from YouTube (yt-dlp)${NC}" ;;
-                "pixabay") echo -e "${YELLOW}$((i+1)). 🎥 Upload from Pixabay${NC}" ;;
-                "pexels") echo -e "${YELLOW}$((i+1)). 📽️ Upload from Pexels${NC}" ;;
-                "manual") echo -e "${YELLOW}$((i+1)). 🗂️ Manual Upload (from home or pipe folder)${NC}" ;;
-            esac
-        done
-        echo -e "${YELLOW}$(( ${#available_sources[@]} + 1 )). 🔙 Back to Main Menu${NC}"
-        echo -e "${BLUE}=================================================================${NC}"
-        read -p "$(echo -e Select an option: )" subchoice
-        if [ "$subchoice" -eq $(( ${#available_sources[@]} + 1 )) ]; then
-            break
-        fi
-        if [[ ! "$subchoice" =~ ^[0-9]+$ ]] || [ "$subchoice" -lt 1 ] || [ "$subchoice" -gt ${#available_sources[@]} ]; then
-            echo -e "${RED}❌ Invalid option. Try again.${NC}"
-            sleep 1
-            ((upload_count--))
-            continue
-        fi
-        source_type=${available_sources[$((subchoice-1))]}
+        echo -e "${BLUE}${BOLD}======================= Processing Upload $upload_count of $num_uploads =======================${NC}"
         case $source_type in
-            youtube)
-                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'random full hd'\): )" query
-                echo -e "${BLUE}📥 Downloading video from YouTube...${NC}"
+            youtube|pixabay|pexels)
+                # Choose random query
+                query=${query_list[$RANDOM % ${#query_list[@]} ]}
+                echo -e "${BLUE}🔍 Using random query: $query${NC}"
+                echo -e "${BLUE}📥 Downloading video from ${source_type^}...${NC}"
                 random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
                 output_file="video_$random_suffix.mp4"
-                python3 video_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                ;;
-            pixabay)
-                API_KEY_FILE="$HOME/.pixabay_api_key"
-                if [ -f "$API_KEY_FILE" ]; then
-                    api_key=$(cat "$API_KEY_FILE")
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${YELLOW}⚠️ Invalid or empty Pixabay API key found in $API_KEY_FILE.${NC}"
-                        rm -f "$API_KEY_FILE" 2>/dev/null
+                if [ "$source_type" = "youtube" ]; then
+                    python3 video_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                elif [ "$source_type" = "pixabay" ]; then
+                    API_KEY_FILE="$HOME/.pixabay_api_key"
+                    if [ -f "$API_KEY_FILE" ]; then
+                        api_key=$(cat "$API_KEY_FILE")
+                        if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                            echo -e "${YELLOW}⚠️ Invalid or empty Pixabay API key found in $API_KEY_FILE.${NC}"
+                            rm -f "$API_KEY_FILE" 2>/dev/null
+                        fi
                     fi
-                fi
-                if [ ! -f "$API_KEY_FILE" ]; then
-                    echo -e "${YELLOW}⚠️ Pixabay API key not found. Please provide a valid API key.${NC}"
-                    while true; do
-                        read -p "$(echo -e Enter your Pixabay API key: )" api_key
-                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
-                            break
-                        else
-                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
-                        fi
-                    done
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ Pixabay API key saved to $API_KEY_FILE.${NC}"
-                fi
-                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
-                echo -e "${BLUE}📥 Downloading video from Pixabay...${NC}"
-                random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-                output_file="video_$random_suffix.mp4"
-                python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
-                    echo -e "${YELLOW}⚠️ Invalid Pixabay API key detected. Deleting $API_KEY_FILE...${NC}"
-                    rm -f "$API_KEY_FILE" 2>/dev/null
-                    echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
-                    while true; do
-                        read -p "$(echo -e Enter your Pixabay API key: )" api_key
-                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
-                            break
-                        else
-                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
-                        fi
-                    done
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ New Pixabay API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                    if [ ! -f "$API_KEY_FILE" ]; then
+                        echo -e "${YELLOW}⚠️ Pixabay API key not found. Please provide a valid API key.${NC}"
+                        while true; do
+                            read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                            if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                                break
+                            else
+                                echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                            fi
+                        done
+                        echo "$api_key" > "$API_KEY_FILE"
+                        echo -e "${GREEN}✅ Pixabay API key saved to $API_KEY_FILE.${NC}"
+                    fi
                     python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                fi
-                ;;
-            pexels)
-                API_KEY_FILE="$HOME/.pexels_api_key"
-                if [ -f "$API_KEY_FILE" ]; then
-                    api_key=$(cat "$API_KEY_FILE")
-                    if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
-                        echo -e "${YELLOW}⚠️ Invalid or empty Pexels API key found in $API_KEY_FILE.${NC}"
+                    if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
+                        echo -e "${YELLOW}⚠️ Invalid Pixabay API key detected. Deleting $API_KEY_FILE...${NC}"
                         rm -f "$API_KEY_FILE" 2>/dev/null
+                        echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
+                        while true; do
+                            read -p "$(echo -e Enter your Pixabay API key: )" api_key
+                            if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                                break
+                            else
+                                echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                            fi
+                        done
+                        echo "$api_key" > "$API_KEY_FILE"
+                        echo -e "${GREEN}✅ New Pixabay API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                        python3 pixabay_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
                     fi
-                fi
-                if [ ! -f "$API_KEY_FILE" ]; then
-                    echo -e "${YELLOW}⚠️ Pexels API key not found. Please provide a valid API key.${NC}"
-                    while true; do
-                        read -p "$(echo -e Enter your Pexels API key: )" api_key
-                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
-                            break
-                        else
-                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                elif [ "$source_type" = "pexels" ]; then
+                    API_KEY_FILE="$HOME/.pexels_api_key"
+                    if [ -f "$API_KEY_FILE" ]; then
+                        api_key=$(cat "$API_KEY_FILE")
+                        if [ -z "$api_key" ] || [ ${#api_key} -lt 10 ]; then
+                            echo -e "${YELLOW}⚠️ Invalid or empty Pexels API key found in $API_KEY_FILE.${NC}"
+                            rm -f "$API_KEY_FILE" 2>/dev/null
                         fi
-                    done
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ Pexels API key saved to $API_KEY_FILE.${NC}"
-                fi
-                read -p "$(echo -e 🔍 Enter a search query for the video \(e.g., 'nature'\): )" query
-                echo -e "${BLUE}📥 Downloading video from Pexels...${NC}"
-                random_suffix=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-                output_file="video_$random_suffix.mp4"
-                python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
-                if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
-                    echo -e "${YELLOW}⚠️ Invalid Pexels API key detected. Deleting $API_KEY_FILE...${NC}"
-                    rm -f "$API_KEY_FILE" 2>/dev/null
-                    echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
-                    while true; do
-                        read -p "$(echo -e Enter your Pexels API key: )" api_key
-                        if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
-                            break
-                        else
-                            echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
-                        fi
-                    done
-                    echo "$api_key" > "$API_KEY_FILE"
-                    echo -e "${GREEN}✅ New Pexels API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                    fi
+                    if [ ! -f "$API_KEY_FILE" ]; then
+                        echo -e "${YELLOW}⚠️ Pexels API key not found. Please provide a valid API key.${NC}"
+                        while true; do
+                            read -p "$(echo -e Enter your Pexels API key: )" api_key
+                            if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                                break
+                            else
+                                echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                            fi
+                        done
+                        echo "$api_key" > "$API_KEY_FILE"
+                        echo -e "${GREEN}✅ Pexels API key saved to $API_KEY_FILE.${NC}"
+                    fi
                     python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                    if grep -q "API key invalid" "$LOG_FILE" 2>/dev/null; then
+                        echo -e "${YELLOW}⚠️ Invalid Pexels API key detected. Deleting $API_KEY_FILE...${NC}"
+                        rm -f "$API_KEY_FILE" 2>/dev/null
+                        echo -e "${YELLOW}⚠️ Please provide a valid API key.${NC}"
+                        while true; do
+                            read -p "$(echo -e Enter your Pexels API key: )" api_key
+                            if [ -n "$api_key" ] && [ ${#api_key} -ge 10 ]; then
+                                break
+                            else
+                                echo -e "${RED}❌ Invalid API key (empty or too short). Please try again.${NC}"
+                            fi
+                        done
+                        echo "$api_key" > "$API_KEY_FILE"
+                        echo -e "${GREEN}✅ New Pexels API key saved to $API_KEY_FILE. Retrying download...${NC}"
+                        python3 pexels_downloader.py "$query" "$output_file" 2>&1 | tee -a "$LOG_FILE"
+                    fi
                 fi
                 ;;
             manual)
@@ -620,7 +621,6 @@ upload_file() {
                 videos=($(find "$HOME" "$HOME/pipe" -type f -name "*.mp4" 2>/dev/null))
                 if [ ${#videos[@]} -eq 0 ]; then
                     echo -e "${RED}❌ No .mp4 files found.${NC}"
-                    return_to_menu
                     ((upload_count--))
                     continue
                 fi
@@ -636,7 +636,6 @@ upload_file() {
                     echo -e "${GREEN}✅ Selected: $selected${NC}"
                 else
                     echo -e "${RED}❌ Invalid selection.${NC}"
-                    return_to_menu
                     ((upload_count--))
                     continue
                 fi
@@ -702,9 +701,13 @@ upload_file() {
         else
             echo -e "${YELLOW}⚠️ No video file found. Download may have failed or been canceled.${NC}"
         fi
-        return_to_menu
+        if [ $upload_count -lt $num_uploads ]; then
+            echo -e "${YELLOW}🔁 Proceeding to next upload...${NC}"
+            sleep 2
+        fi
     done
     deactivate
+    return_to_menu
 }
 show_file_info() {
     echo -e "${BLUE}📄 Uploaded File Details:${NC}"
@@ -1355,4 +1358,4 @@ while true; do
         9) echo -e "${GREEN}👋 Exiting...${NC}"; exit 0 ;;
         *) echo -e "${RED}❌ Invalid option. Try again.${NC}"; sleep 1 ;;
     esac
-done
+done 
