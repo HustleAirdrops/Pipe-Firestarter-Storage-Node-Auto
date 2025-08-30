@@ -481,18 +481,16 @@ upload_file() {
         fi
     fi
 
-    # List of random queries
     query_list=("nature" "space" "ocean" "mountains" "forest" "cityscape" "animals" "birds" "cars" "technology" "abstract" "art" "music" "sports" "food" "random full hd video" "nature 1080p" "wildlife documentary" "urban exploration" "tech review" "sunrise" "sunset" "galaxy" "milky way" "desert" "rivers" "lakes" "waterfalls" "rainforest" "jungle" "tigers" "lions" "elephants" "deer" "wolves" "whales" "dolphins" "sharks" "butterflies" "eagles" "planes" "trains" "boats" "motorcycles" "trucks" "rock music" "classical music" "jazz" "hip hop" "concerts" "stadiums" "football" "basketball" "cricket" "tennis" "boxing" "mma" "swimming" "olympics" "marathons" "pizza" "burgers" "sushi" "pasta" "desserts" "cakes" "chocolate" "coffee" "tea" "street food" "robots" "ai" "gadgets" "smartphones" "drones" "space exploration" "rockets" "astronauts" "moon landing" "mars mission" "programming" "hacking" "cyberpunk" "virtual reality" "augmented reality" "future tech" "innovation" "startups" "engineering" "science" "painting" "sculpture" "digital art" "graffiti" "architecture" "design" "interior design" "fashion" "photography" "cinematography" "forests in autumn" "snow mountains" "alpine lakes" "glaciers" "volcanoes" "geysers" "caves" "underwater world" "deep sea" "coral reefs" "penguins" "polar bears" "kangaroos" "pandas" "koalas" "snakes" "frogs" "owls" "peacocks" "parrots" "rainy day" "storm" "lightning" "thunderstorm" "tornado" "hurricane" "earthquake" "tsunami" "northern lights" "eclipse" "stars" "planets" "black hole" "supernova" "asteroids" "comets" "meteors" "space station" "satellites" "telescopes" "city lights" "night city" "skyscrapers" "bridges" "highways" "subways" "street art" "markets" "festivals" "travel vlogs" "beaches" "islands" "tropical paradise" "safari" "camping" "hiking" "cycling" "adventure sports" "paragliding" "skydiving" "coding tutorials" "tech conferences" "robotics competitions" "esports" "gaming" "pc builds" "virtual concerts" "dance" "yoga" "meditation" "motivational speech" "history documentary" "ancient ruins" "castles" "temples" "churches" "mosques" "cultural festivals" "traditional food" "street music" "machine learning" "blockchain" "crypto" "bitcoin" "ethereum" "nfts" "defi" "smart contracts" "cloud computing" "data science")
 
-    # Ask for number of uploads
     while true; do
-        read -p "$(echo -e "${BLUE}How many files do you want to upload? (1-30): ${NC}")" num_uploads
-        if [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -ge 1 ] && [ "$num_uploads" -le 30 ]; then
+        read -p "$(echo -e "${YELLOW}How many files do you want to upload? (1-50): ${NC}")" num_uploads
+        if [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -ge 1 ] && [ "$num_uploads" -le 50 ]; then
             break
-        elif [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -gt 30 ]; then
-            echo -e "${RED}Sorry Sir, you can't do that many... you can only do 30 uploads 😔${NC}"
+        elif [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -gt 50 ]; then
+            echo -e "${RED}Sorry Sir, you can't do that many... you can only do 50 uploads 😔${NC}"
         else
-            echo -e "${RED}❌ Invalid input. Please enter a number between 1 and 30.${NC}"
+            echo -e "${RED}❌ Invalid input. Please enter a number between 1 and 50.${NC}"
         fi
         sleep 1
     done
