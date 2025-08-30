@@ -480,10 +480,24 @@ upload_file() {
             echo -e "${GREEN}✅ ffmpeg installed successfully.${NC}"
         fi
     fi
+
+    # Ask for number of uploads
     while true; do
+        read -p "$(echo -e "${BLUE}How many files do you want to upload? (1-30): ${NC}")" num_uploads
+        if [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -ge 1 ] && [ "$num_uploads" -le 30 ]; then
+            break
+        elif [[ "$num_uploads" =~ ^[0-9]+$ ]] && [ "$num_uploads" -gt 30 ]; then
+            echo -e "${RED}Sorry Sir, you can't do that many... you can only do 30 uploads 😔${NC}"
+        else
+            echo -e "${RED}❌ Invalid input. Please enter a number between 1 and 30.${NC}"
+        fi
+        sleep 1
+    done
+
+    for ((upload_count=1; upload_count<=num_uploads; upload_count++)); do
         clear
         show_header
-        echo -e "${BLUE}${BOLD}======================= Upload File Submenu =======================${NC}"
+        echo -e "${BLUE}${BOLD}======================= Upload File Submenu (Upload $upload_count of $num_uploads) =======================${NC}"
         for i in "${!available_sources[@]}"; do
             case ${available_sources[$i]} in
                 "youtube") echo -e "${YELLOW}$((i+1)). 📹 Upload from YouTube (yt-dlp)${NC}" ;;
@@ -496,13 +510,12 @@ upload_file() {
         echo -e "${BLUE}=================================================================${NC}"
         read -p "$(echo -e Select an option: )" subchoice
         if [ "$subchoice" -eq $(( ${#available_sources[@]} + 1 )) ]; then
-            deactivate
-            return_to_menu
-            return
+            break
         fi
         if [[ ! "$subchoice" =~ ^[0-9]+$ ]] || [ "$subchoice" -lt 1 ] || [ "$subchoice" -gt ${#available_sources[@]} ]; then
             echo -e "${RED}❌ Invalid option. Try again.${NC}"
             sleep 1
+            ((upload_count--))
             continue
         fi
         source_type=${available_sources[$((subchoice-1))]}
@@ -608,6 +621,7 @@ upload_file() {
                 if [ ${#videos[@]} -eq 0 ]; then
                     echo -e "${RED}❌ No .mp4 files found.${NC}"
                     return_to_menu
+                    ((upload_count--))
                     continue
                 fi
                 echo -e "${YELLOW}Available videos:${NC}"
@@ -623,6 +637,7 @@ upload_file() {
                 else
                     echo -e "${RED}❌ Invalid selection.${NC}"
                     return_to_menu
+                    ((upload_count--))
                     continue
                 fi
                 ;;
@@ -691,7 +706,6 @@ upload_file() {
     done
     deactivate
 }
-
 show_file_info() {
     echo -e "${BLUE}📄 Uploaded File Details:${NC}"
     if [ -f "file_details.json" ]; then
